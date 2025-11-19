@@ -12,7 +12,6 @@ public class Evento extends Publicacao {
     @ManyToOne
     @JoinColumn(name = "alocacao_id")
     private Alocacao alocacao;
-
     private int capacidade;
 
     private LocalDate dataInicio;

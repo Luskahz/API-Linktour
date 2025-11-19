@@ -1,5 +1,6 @@
 package com.linktour.service;
 
+import com.linktour.dto.usuario.ComumRegistrarDTO;
 import com.linktour.exception.RecursoNaoEncontradoException;
 import com.linktour.model.usuario.Comum;
 import com.linktour.model.usuario.Linktour;
@@ -7,7 +8,7 @@ import com.linktour.model.usuario.Usuario;
 import com.linktour.repository.ComumRepository;
 import com.linktour.repository.LinktourRepository;
 import com.linktour.repository.UsuarioRepository;
-import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,44 +21,41 @@ public class UsuarioService {
     private final ComumRepository comumRepository;
     private final LinktourRepository linktourRepository;
 
-    public UsuarioService(
-            UsuarioRepository usuarioRepository,
-            ComumRepository comumRepository,
-            LinktourRepository linktourRepository
-    ) {
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                          ComumRepository comumRepository,
+                          LinktourRepository linktourRepository) {
         this.usuarioRepository = usuarioRepository;
         this.comumRepository = comumRepository;
         this.linktourRepository = linktourRepository;
     }
 
+    // CADASTRAR COMUM USANDO DTO
+    public Usuario cadastrarComum(ComumRegistrarDTO dto) {
 
-    // =============================
-    // CADASTRAR USUÁRIO COMUM
-    // =============================
-    public Usuario cadastrarComum(Comum comum) {
+        usuarioRepository.findByEmail(dto.getEmail())
+                .ifPresent(u -> { throw new RuntimeException("Email já cadastrado."); });
 
-        // email duplicado?
-        usuarioRepository.findByEmail(comum.getEmail())
-                .ifPresent(u -> { 
-                    throw new RuntimeException("Email já cadastrado."); 
-                });
+        Comum comum = new Comum();
+        comum.setCpf(dto.getCpf());
+        comum.setNomeCompleto(dto.getNomeCompleto());
+        comum.setPreferencias(dto.getPreferencias());
+        comum.setNascimento(dto.getNascimento());
+        comum.setGenero(dto.getGenero());
+        comum.setParceiro(dto.getParceiro());
 
-        // preenchimentos automáticos
-        comum.setDataCadastro(LocalDate.now());
+        comum.setCidade(dto.getCidade());
+        comum.setEmail(dto.getEmail());
+        comum.setTelefone(dto.getTelefone());
         comum.setStatus("ATIVO");
+        comum.setDataCadastro(LocalDate.now());
         comum.setAvgAvaliacao(0);
 
-        // senha → hash
-        String hashSenha = BCrypt.hashpw(comum.getSenhaHash(), BCrypt.gensalt());
-        comum.setSenhaHash(hashSenha);
+        String hash = BCrypt.hashpw(dto.getSenha(), BCrypt.gensalt());
+        comum.setSenhaHash(hash);
 
         return comumRepository.save(comum);
     }
-
-
-    // =============================
-    // PROMOVER COMUM → LINKTOUR (ADMIN)
-    // =============================
+    // PROMOÇÃO
     public Linktour promoverParaLinktour(Long idUsuario, int registro) {
 
         Usuario usuario = usuarioRepository.findById(idUsuario)
@@ -66,7 +64,6 @@ public class UsuarioService {
         Linktour link = new Linktour();
         link.setRegistro(registro);
 
-        // copia campos comuns
         link.setEmail(usuario.getEmail());
         link.setSenhaHash(usuario.getSenhaHash());
         link.setCidade(usuario.getCidade());
@@ -76,16 +73,11 @@ public class UsuarioService {
         link.setAvgAvaliacao(usuario.getAvgAvaliacao());
         link.setUltimoLogin(usuario.getUltimoLogin());
 
-        // salva
         return linktourRepository.save(link);
     }
 
-
-    // =============================
     // LOGIN
-    // =============================
     public Usuario login(String email, String senhaPura) {
-
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Email não encontrado"));
 
@@ -99,27 +91,15 @@ public class UsuarioService {
         return usuario;
     }
 
-
-    // =============================
-    // LISTAR
-    // =============================
     public List<Usuario> listarTodos() {
         return usuarioRepository.findAll();
     }
 
-
-    // =============================
-    // BUSCAR POR ID
-    // =============================
     public Usuario buscarPorId(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
     }
 
-
-    // =============================
-    // DELETAR
-    // =============================
     public void deletar(Long id) {
         if (!usuarioRepository.existsById(id)) {
             throw new RecursoNaoEncontradoException("Usuário não encontrado");

@@ -1,5 +1,6 @@
 package com.linktour.service;
 
+import com.linktour.dto.evento.EventoRequestDTO;
 import com.linktour.exception.RecursoNaoEncontradoException;
 import com.linktour.model.publicacao.Evento;
 import com.linktour.model.alocacao.Alocacao;
@@ -19,20 +20,19 @@ public class EventoService {
     @Autowired
     private AlocacaoRepository alocacaoRepository;
 
-    // Criar evento vinculando a alocação
-    public Evento criar(Evento evento) {
+    public Evento criar(EventoRequestDTO dto) {
 
-        // valida se alocação existe
-        Long idAloc = evento.getAlocacao() != null ? evento.getAlocacao().getId() : null;
+        // verificar alocação
+        Alocacao aloc = alocacaoRepository.findById(dto.getAlocacaoId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("A alocação vinculada não existe."));
 
-        if (idAloc == null || !alocacaoRepository.existsById(idAloc)) {
-            throw new RecursoNaoEncontradoException("A alocação vinculada não existe.");;
-        }
-
-        // busca a alocação real e associa
-        Alocacao aloc = alocacaoRepository.findById(idAloc)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("A alocação não foi encontrada."));
-
+        // montar entidade
+        Evento evento = new Evento();
+        evento.setTitulo(dto.getTitulo());
+        evento.setDescricao(dto.getDescricao());
+        evento.setCapacidade(dto.getCapacidade());
+        evento.setDataInicio(dto.getDataInicio());
+        evento.setDataFim(dto.getDataFim());
         evento.setAlocacao(aloc);
 
         return eventoRepository.save(evento);
@@ -43,10 +43,14 @@ public class EventoService {
     }
 
     public Evento buscarPorId(Long id) {
-        return eventoRepository.findById(id).orElse(null);
+        return eventoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
     }
 
     public void deletar(Long id) {
+        if (!eventoRepository.existsById(id)) {
+            throw new RecursoNaoEncontradoException("Evento não encontrado");
+        }
         eventoRepository.deleteById(id);
     }
 }

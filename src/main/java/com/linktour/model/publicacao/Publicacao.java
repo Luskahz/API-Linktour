@@ -10,7 +10,7 @@ public abstract class Publicacao {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int idUsuario;
+    private Long idUsuario;
     private String dataCriar;
     private String titulo;
     private String descricao;
@@ -21,11 +21,11 @@ public abstract class Publicacao {
         return id;
     }
 
-    public int getIdUsuario() {
+    public Long getIdUsuario() {
         return idUsuario;
     }
 
-    public void setIdUsuario(int idUsuario) {
+    public void setIdUsuario(Long idUsuario) {
         this.idUsuario = idUsuario;
     }
 
