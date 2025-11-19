@@ -1,5 +1,6 @@
 package com.linktour.controller;
 
+import com.linktour.dto.usuario.*;
 import com.linktour.model.usuario.Comum;
 import com.linktour.model.usuario.Linktour;
 import com.linktour.model.usuario.Usuario;
@@ -7,7 +8,6 @@ import com.linktour.service.UsuarioService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -19,53 +19,46 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
-    // =============================
-    // CADASTRO DE USUÁRIO COMUM
-    // =============================
+    // CADASTRAR USUÁRIO COMUM
     @PostMapping("/comum")
-    public Usuario cadastrarComum(@RequestBody Comum comum) {
-        return usuarioService.cadastrarComum(comum);
+    public UsuarioResponseDTO cadastrarComum(@RequestBody ComumRegistrarDTO dto) {
+        Usuario usuario = usuarioService.cadastrarComum(dto);
+        return UsuarioMapper.toResponse(usuario);
     }
 
-    // =============================
     // LOGIN
-    // =============================
     @PostMapping("/login")
-    public Usuario login(@RequestBody Map<String, String> json) {
-        String email = json.get("email");
-        String senha = json.get("senha");
-        return usuarioService.login(email, senha);
+    public UsuarioResponseDTO login(@RequestBody LoginDTO dto) {
+        Usuario usuario = usuarioService.login(dto.getEmail(), dto.getSenha());
+        return UsuarioMapper.toResponse(usuario);
     }
 
-    // =============================
-    // PROMOVER USUÁRIO PARA LINKTOUR
-    // =============================
+    // PROMOVER
     @PostMapping("/{id}/promover")
-    public Linktour promover(@PathVariable Long id, @RequestBody Map<String, Integer> json) {
-
-        int registro = json.get("registro");
-        return usuarioService.promoverParaLinktour(id, registro);
+    public UsuarioResponseDTO promover(
+            @PathVariable Long id,
+            @RequestBody PromoverDTO dto
+    ) {
+        Linktour link = usuarioService.promoverParaLinktour(id, dto.getRegistro());
+        return UsuarioMapper.toResponse(link);
     }
 
-    // =============================
-    // LISTAR TODOS OS USUÁRIOS
-    // =============================
+    // LISTAR
     @GetMapping
-    public List<Usuario> listar() {
-        return usuarioService.listarTodos();
+    public List<UsuarioResponseDTO> listar() {
+        return usuarioService.listarTodos()
+                .stream()
+                .map(UsuarioMapper::toResponse)
+                .toList();
     }
 
-    // =============================
     // BUSCAR POR ID
-    // =============================
     @GetMapping("/{id}")
-    public Usuario buscarPorId(@PathVariable Long id) {
-        return usuarioService.buscarPorId(id);
+    public UsuarioResponseDTO buscarPorId(@PathVariable Long id) {
+        return UsuarioMapper.toResponse(usuarioService.buscarPorId(id));
     }
 
-    // =============================
-    // DELETAR USUÁRIO
-    // =============================
+    // DELETAR
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
         usuarioService.deletar(id);
