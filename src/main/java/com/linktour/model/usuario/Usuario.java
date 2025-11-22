@@ -12,7 +12,7 @@ public abstract class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int cidade;
+    private String cidade;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -34,11 +34,11 @@ public abstract class Usuario {
         return id;
     }
 
-    public int getCidade() {
+    public String getCidade() {
         return cidade;
     }
 
-    public void setCidade(int cidade) {
+    public void setCidade(String cidade) {
         this.cidade = cidade;
     }
 

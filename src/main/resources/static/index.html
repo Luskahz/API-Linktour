@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Home - Usuário</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #d8d8d8; /* fundo neutro */
+            font-family: "Inter", Arial, sans-serif;
+        }
+
+        /* Caixa estilo glass */
+        .glass-box {
+            width: 380px;
+            padding: 40px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.22);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        p {
+            color: #555;
+            margin-bottom: 30px;
+            font-size: 17px;
+        }
+
+        /* Botões */
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        /* Botão Cadastro (claro) */
+        .btn-cadastro {
+            background: #ffffffcc;
+            color: #2f3b2f;
+            border: 2px solid #2f3b2f;
+        }
+
+        .btn-cadastro:hover {
+            background: #2f3b2f;
+            color: white;
+        }
+
+        /* Botão Login (escuro) */
+        .btn-login {
+            background: #2f3b2f;
+            color: white;
+        }
+
+        .btn-login:hover {
+            background: #445544;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="glass-box">
+
+        <h1>LINKTOUR</h1>
+        <p>Escolha uma opção:</p>
+
+        <button class="btn-cadastro" onclick="window.location.href='html/cadastro.html'">
+            Cadastro
+        </button>
+
+        <button class="btn-login" onclick="window.location.href='html/login.html'">
+            Login
+        </button>
+
+    </div>
+
+</body>
+</html>

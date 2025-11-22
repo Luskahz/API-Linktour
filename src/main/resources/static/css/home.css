@@ -1,0 +1,315 @@
+/* RESET BÁSICO */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f5f5;
+    color: #111;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================
+   HEADER
+   ========================= */
+
+.lt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: #000;
+    color: #fff;
+    gap: 20px;
+}
+
+.lt-logo {
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* NAV + BOTÃO + EVENTO */
+
+.lt-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Botão + Evento (quadrado, maiorzinho) */
+.lt-btn-add-evento {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 2px solid #fff;
+    background: transparent;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.lt-btn-add-evento:hover {
+    background: #fff;
+    color: #000;
+}
+
+.lt-nav-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.95rem;
+    padding-bottom: 2px;
+    border-bottom: 2px solid transparent;
+}
+
+.lt-nav-link:hover {
+    border-bottom-color: #fff;
+}
+
+.lt-nav-link--active {
+    border-bottom-color: #fff;
+}
+
+/* BARRA DE BUSCA NO HEADER */
+
+.lt-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lt-search-input {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+    min-width: 180px;
+}
+
+.lt-search-btn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #fff;
+    background: transparent;
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.lt-search-btn:hover {
+    background: #fff;
+    color: #000;
+}
+
+/* =========================
+   WRAPPER / LAYOUT
+   ========================= */
+
+.lt-wrapper {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 16px;
+    min-height: 0; /* importante para o scroll interno funcionar */
+}
+
+/* SIDE BARS */
+
+.lt-sidebar {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+/* LEFT BAR – por enquanto vazia, mas já com largura definida */
+.lt-sidebar--left {
+    width: 220px;
+    flex-shrink: 0;
+}
+
+/* RIGHT BAR – fixa (sticky) no scroll */
+.lt-sidebar--right {
+    width: 260px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px; /* distância do topo da viewport */
+    align-self: flex-start;
+}
+
+/* =========================
+   CONTEÚDO CENTRAL
+   ========================= */
+
+.lt-content {
+    flex: 1;
+    min-width: 0;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* para o flex permitir scroll interno */
+}
+
+.lt-content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.lt-content-header h1 {
+    font-size: 1.3rem;
+}
+
+/* FEED DE EVENTOS – ÁREA QUE ROLA */
+
+.lt-events-feed {
+    margin-top: 12px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Placeholders genéricos */
+
+.lt-placeholder {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* =========================
+   CARDS DE EVENTO (FEED)
+   ========================= */
+
+.lt-event-card {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+
+.lt-event-card:last-child {
+    border-bottom: none;
+}
+
+.lt-event-card h3 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.lt-event-meta {
+    font-size: 0.8rem;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.lt-event-desc {
+    font-size: 0.9rem;
+    color: #222;
+}
+
+/* =========================
+   CARDS / LISTAS NA RIGHT BAR
+   ========================= */
+
+.lt-card {
+    margin-bottom: 20px;
+}
+
+.lt-card h2 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+}
+
+.lt-list {
+    list-style: none;
+}
+
+.lt-list li {
+    padding: 6px 0;
+    border-bottom: 1px dashed #e0e0e0;
+    font-size: 0.9rem;
+}
+
+.lt-list li:last-child {
+    border-bottom: none;
+}
+
+/* =========================
+   FOOTER
+   ========================= */
+
+.lt-footer {
+    border-top: 1px solid #ddd;
+    padding: 12px 24px;
+    background: #ffffff;
+    font-size: 0.85rem;
+    color: #444;
+    text-align: center;
+}
+
+/* =========================
+   RESPONSIVIDADE
+   ========================= */
+
+@media (max-width: 960px) {
+    .lt-wrapper {
+        flex-direction: column;
+    }
+
+    .lt-sidebar--left,
+    .lt-sidebar--right {
+        width: 100%;
+        position: static;
+    }
+
+    .lt-header {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 10px 16px;
+    }
+
+    .lt-search {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .lt-search-input {
+        flex: 1;
+    }
+}
+
+@media (max-width: 640px) {
+    .lt-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .lt-nav {
+        order: 2;
+    }
+
+    .lt-search {
+        order: 3;
+        justify-content: stretch;
+    }
+
+    .lt-search-input {
+        width: 100%;
+    }
+}

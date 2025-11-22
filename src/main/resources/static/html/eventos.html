@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Eventos | LinkTour</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #fafafa; padding: 30px; }
+        header { background: black; padding: 15px; margin-bottom: 25px; border-radius: 10px; }
+        header a { color: white; margin-right: 20px; text-decoration: none; font-size: 18px; }
+        header a:hover { text-decoration: underline; }
+        h1 { border-bottom: 2px solid black; width: fit-content; }
+        .container { display: flex; gap: 40px; align-items: flex-start; }
+        .form-card { background: white; padding: 25px; border-radius: 12px; width: 360px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        label { margin-top: 10px; font-weight: bold; display: block; }
+        input, textarea, select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; }
+        button { margin-top: 20px; width: 100%; padding: 10px; background: black; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        button.secondary { background: #666; }
+        .lista-card { flex: 1; min-width: 400px; }
+        .evento { background: white; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 0 5px rgba(0,0,0,0.15); }
+        .evento-header { display: flex; justify-content: space-between; align-items: center; }
+        .btn-edit { background: black; color: white; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; margin-right: 8px; }
+        .btn-del { background: red; color: white; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; }
+        .meta { color: #333; font-size: 14px; margin-top: 8px; }
+        .coords { margin-top: 10px; padding: 10px; background: #f7f7f7; border-radius: 6px; font-weight: 500; }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: black;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s;
+            font-weight: bold;
+            z-index: 2000;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<header>
+    <a href="eventos.html">Eventos</a>
+    <a href="alocacao.html">Alocações</a>
+</header>
+
+<h1>Eventos</h1>
+
+<div class="container">
+
+    <!-- FORM -->
+    <div class="form-card">
+        <h3 id="formTitle">Criar Evento</h3>
+        <form id="formEvento">
+            <label>Título</label>
+            <input id="titulo" required>
+            <label>Descrição</label>
+            <textarea id="descricao" required></textarea>
+            <label>Data de Criação</label>
+            <input type="date" id="dataCriar" required>
+            <label>Data Início</label>
+            <input type="date" id="dataInicio" required>
+            <label>Data Fim</label>
+            <input type="date" id="dataFim" required>
+            <label>Capacidade</label>
+            <input type="number" id="capacidade" required>
+            <label>Alocação</label>
+            <select id="alocacaoId" required></select>
+            <button type="submit" id="submitBtn">Criar Evento</button>
+            <button type="button" id="cancelEdit" class="secondary" style="display:none">Cancelar Edição</button>
+        </form>
+    </div>
+
+    <!-- LISTA -->
+    <div class="lista-card">
+        <h3>Lista de Eventos</h3>
+        <div id="listaEventos"></div>
+    </div>
+
+</div>
+
+<script>
+const API_EVENTOS = "http://localhost:8080/eventos";
+const API_ALOC = "http://localhost:8080/alocacoes";
+
+// ID do usuário logado
+const usuarioId = 1;
+
+let editingId = null;
+
+/* ----------- TOAST ----------- */
+function showToast(msg, ok = true) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.background = ok ? "black" : "red";
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+/* ----------- CARREGAR ALOCAÇÕES ----------- */
+async function carregarAlocacoes() {
+    try {
+        const res = await fetch(API_ALOC);
+        const lista = await res.json();
+        const sel = document.getElementById("alocacaoId");
+        sel.innerHTML = `<option value="">-- selecione --</option>`;
+        lista.forEach(a => {
+            sel.innerHTML += `<option value="${a.id}">${a.nome} (${a.lotacao})</option>`;
+        });
+    } catch(e) { console.error("Erro ao carregar alocações", e); }
+}
+
+/* ----------- CARREGAR EVENTOS ----------- */
+async function carregarEventos() {
+    try {
+        const res = await fetch(API_EVENTOS);
+        const eventos = await res.json();
+        const div = document.getElementById("listaEventos");
+        div.innerHTML = "";
+        eventos.forEach(e => {
+            const lat = e.alocacao?.latitude ?? "N/A";
+            const lng = e.alocacao?.longitude ?? "N/A";
+            const nomeUsuario = e.nomeUsuario ?? "Sem usuário";
+
+            div.innerHTML += `
+                <div class="evento">
+                    <div class="evento-header">
+                        <strong>${e.titulo}</strong>
+                        <div>
+                            <button class="btn-edit" onclick="editarEvento(${e.id})">Editar</button>
+                            <button class="btn-del" onclick="removerEvento(${e.id})">Excluir</button>
+                        </div>
+                    </div>
+                    <div class="meta"><b>Usuário:</b> ${nomeUsuario}</div>
+                    <div class="meta">${e.descricao}</div>
+                    <div class="coords"><b>Latitude:</b> ${lat}<br><b>Longitude:</b> ${lng}</div>
+                    <div class="meta"><b>Início:</b> ${e.dataInicio}<br><b>Fim:</b> ${e.dataFim}<br><b>Capacidade:</b> ${e.capacidade}</div>
+                </div>`;
+        });
+    } catch(e) { console.error("Erro ao carregar eventos", e); }
+}
+
+/* ----------- SALVAR EVENTO ----------- */
+document.getElementById("formEvento").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+
+    const dados = {
+        titulo: document.getElementById("titulo").value,
+        descricao: document.getElementById("descricao").value,
+        dataCriar: document.getElementById("dataCriar").value,
+        dataInicio: document.getElementById("dataInicio").value,
+        dataFim: document.getElementById("dataFim").value,
+        capacidade: Number(document.getElementById("capacidade").value)
+    };
+
+    const alocacaoId = Number(document.getElementById("alocacaoId").value);
+
+    const url = editingId 
+        ? `${API_EVENTOS}/${editingId}?usuarioId=${usuarioId}&alocacaoId=${alocacaoId}` 
+        : `${API_EVENTOS}?usuarioId=${usuarioId}&alocacaoId=${alocacaoId}`;
+
+    const method = editingId ? "PUT" : "POST";
+
+    try {
+        const resp = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dados)
+        });
+
+        if (!resp.ok) throw new Error("Erro ao salvar");
+
+        resetForm();
+        carregarEventos();
+
+        showToast(editingId ? "Evento atualizado!" : "Evento criado!");
+
+    } catch(e) {
+        console.error(e);
+        showToast("Erro ao salvar!", false);
+    }
+});
+
+/* ----------- EDITAR EVENTO ----------- */
+async function editarEvento(id) {
+    const r = await fetch(`${API_EVENTOS}/${id}`);
+    const e = await r.json();
+
+    editingId = id;
+    document.getElementById("titulo").value = e.titulo;
+    document.getElementById("descricao").value = e.descricao;
+    document.getElementById("dataCriar").value = e.dataCriar;
+    document.getElementById("dataInicio").value = e.dataInicio;
+    document.getElementById("dataFim").value = e.dataFim;
+    document.getElementById("capacidade").value = e.capacidade;
+    document.getElementById("alocacaoId").value = e.alocacaoId ?? "";
+
+    document.getElementById("formTitle").textContent = "Editar Evento";
+    document.getElementById("submitBtn").textContent = "Salvar";
+    document.getElementById("cancelEdit").style.display = "block";
+}
+
+/* ----------- EXCLUIR ----------- */
+async function removerEvento(id) {
+    if (!confirm("Tem certeza que deseja excluir?")) return;
+
+    await fetch(`${API_EVENTOS}/${id}`, { method: "DELETE" });
+
+    carregarEventos();
+    showToast("Evento excluído!");
+}
+
+/* ----------- RESETAR ----------- */
+function resetForm() {
+    editingId = null;
+    document.getElementById("formEvento").reset();
+    document.getElementById("formTitle").textContent = "Criar Evento";
+    document.getElementById("submitBtn").textContent = "Criar Evento";
+    document.getElementById("cancelEdit").style.display = "none";
+}
+
+/* ----------- CANCELAR EDIÇÃO ----------- */
+document.getElementById("cancelEdit").addEventListener("click", resetForm);
+
+/* ----------- INICIALIZAÇÃO ----------- */
+carregarAlocacoes();
+carregarEventos();
+</script>
+
+</body>
+</html>

@@ -41,8 +41,6 @@ public class UsuarioService {
         comum.setPreferencias(dto.getPreferencias());
         comum.setNascimento(dto.getNascimento());
         comum.setGenero(dto.getGenero());
-        comum.setParceiro(dto.getParceiro());
-
         comum.setCidade(dto.getCidade());
         comum.setEmail(dto.getEmail());
         comum.setTelefone(dto.getTelefone());

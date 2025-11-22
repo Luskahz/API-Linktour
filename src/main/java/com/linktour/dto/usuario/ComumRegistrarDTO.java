@@ -9,13 +9,10 @@ public class ComumRegistrarDTO {
     private String preferencias;
     private LocalDate nascimento;
     private String genero;
-    private int parceiro;
-
     private String email;
     private String telefone;
     private String senha;
-
-    private int cidade;
+    private String cidade;
 
     public String getCpf() { return cpf; }
     public void setCpf(String cpf) { this.cpf = cpf; }
@@ -32,9 +29,6 @@ public class ComumRegistrarDTO {
     public String getGenero() { return genero; }
     public void setGenero(String genero) { this.genero = genero; }
 
-    public int getParceiro() { return parceiro; }
-    public void setParceiro(int parceiro) { this.parceiro = parceiro; }
-
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
@@ -44,6 +38,6 @@ public class ComumRegistrarDTO {
     public String getSenha() { return senha; }
     public void setSenha(String senha) { this.senha = senha; }
 
-    public int getCidade() { return cidade; }
-    public void setCidade(int cidade) { this.cidade = cidade; }
+    public String getCidade() { return cidade; }
+    public void setCidade(String cidade) { this.cidade = cidade; }
 }

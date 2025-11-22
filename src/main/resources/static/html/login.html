@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login de Usuário</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 60px;
+        }
+        form { 
+            padding: 20px; 
+            border: 1px solid #ccc; 
+            width: 350px; 
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px #ddd;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        label { 
+            display: block; 
+            margin-top: 10px; 
+        }
+        input { 
+            width: 100%; 
+            padding: 8px; 
+            margin-top: 5px; 
+            border: 1px solid #aaa;
+            border-radius: 5px;
+        }
+        button { 
+            margin-top: 15px; 
+            padding: 10px; 
+            width: 100%; 
+            cursor: pointer;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        .message { 
+            margin-top: 15px; 
+            font-weight: bold; 
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>Login</h2>
+
+    <form id="formLogin">
+        <label>Email:<input type="email" name="email" required></label>
+        <label>Senha:<input type="password" name="senha" required></label>
+        <button type="submit">Entrar</button>
+        <div class="message" id="mensagemLogin"></div>
+    </form>
+
+    <script>
+        const API_URL = 'http://localhost:8080/usuarios';
+        const formLogin = document.getElementById('formLogin');
+        const mensagemLogin = document.getElementById('mensagemLogin');
+
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                email: formLogin.email.value,
+                senha: formLogin.senha.value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.text();
+
+                if (res.ok) {
+                    mensagemLogin.textContent = "Login feito!";
+                    mensagemLogin.style.color = "green";
+
+                    // Aguarda 1 segundo antes de redirecionar
+                    setTimeout(() => {
+                        window.location.href = "home.html";
+                    }, 1000);
+                } else {
+                    mensagemLogin.textContent = result;
+                    mensagemLogin.style.color = "red";
+                }
+
+            } catch {
+                mensagemLogin.textContent = 'Erro ao conectar com o servidor';
+                mensagemLogin.style.color = 'red';
+            }
+        });
+    </script>
+
+</body>
+</html>

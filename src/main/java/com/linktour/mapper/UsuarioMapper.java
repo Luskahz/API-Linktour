@@ -14,7 +14,6 @@ public class UsuarioMapper {
         c.setPreferencias(dto.getPreferencias());
         c.setNascimento(dto.getNascimento());
         c.setGenero(dto.getGenero());
-        c.setParceiro(dto.getParceiro());
 
         c.setEmail(dto.getEmail());
         c.setTelefone(dto.getTelefone());

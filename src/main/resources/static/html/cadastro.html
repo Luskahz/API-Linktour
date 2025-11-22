@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro de Usuário</title>
+
+    <style>
+        body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    background: #d8d8d8;
+    font-family: "Inter", Arial, sans-serif;
+}
+
+.glass-box {
+    width: 420px;
+    padding: 35px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    margin-top: 60px; /* 💥 AQUI ESTÁ A CORREÇÃO */
+}
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        label {
+            display: block;
+            margin-top: 14px;
+            font-size: 14px;
+            color: #444;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(255, 255, 255, 0.85);
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: #2f3b2f;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #445544;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-box">
+        <h2>Cadastro de Usuário</h2>
+
+        <form id="formCadastro">
+            <label>Nome completo:
+                <input type="text" name="nomeCompleto" required>
+            </label>
+
+            <label>Email:
+                <input type="email" name="email" required>
+            </label>
+
+            <label>Telefone:
+                <input type="text" name="telefone">
+            </label>
+
+            <label>Senha:
+                <input type="password" name="senha" required>
+            </label>
+
+            <label>CPF:
+                <input type="text" name="cpf">
+            </label>
+
+            <label>Preferências:
+                <input type="text" name="preferencias">
+            </label>
+
+            <label>Data de nascimento:
+                <input type="date" name="nascimento">
+            </label>
+
+            <label>Gênero:
+                <input type="text" name="genero">
+            </label>
+
+            <label>Cidade:
+                <input type="text" name="cidade">
+            </label>
+
+            <button type="submit">Cadastrar</button>
+            <div class="message" id="mensagemCadastro"></div>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/usuarios/comum';
+        const formCadastro = document.getElementById('formCadastro');
+        const mensagemCadastro = document.getElementById('mensagemCadastro');
+
+        formCadastro.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = {
+        nomeCompleto: formCadastro.nomeCompleto.value,
+        email: formCadastro.email.value,
+        telefone: formCadastro.telefone.value,
+        senha: formCadastro.senha.value,
+        cpf: formCadastro.cpf.value,
+        preferencias: formCadastro.preferencias.value,
+        nascimento: formCadastro.nascimento.value,
+        genero: formCadastro.genero.value,
+        cidade: formCadastro.cidade.value
+    };
+
+    try {
+        const res = await fetch(`${API_URL}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            mensagemCadastro.textContent = "Cadastro feito com sucesso!";
+            mensagemCadastro.style.color = "green";
+        } else {
+            mensagemCadastro.textContent = "Erro ao realizar o cadastro.";
+            mensagemCadastro.style.color = "red";
+        }
+        
+    } catch {
+        mensagemCadastro.textContent = "Erro ao conectar com o servidor.";
+        mensagemCadastro.style.color = "red";
+    }
+});
+      
+    </script>
+
+</body>
+</html>
