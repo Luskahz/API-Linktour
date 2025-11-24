@@ -1,10 +1,21 @@
 package com.linktour.model.usuario;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "usuario")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Usuario {
 
@@ -12,89 +23,25 @@ public abstract class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     private String cidade;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false) @Email
     private String email;
 
+    @NotNull @NotBlank
     private LocalDate dataCadastro;
+
+    @NotBlank
     private String telefone;
 
     @Column(nullable = false)
     private String senhaHash;
 
+    @NotBlank
     private String status;
+
     private float avgAvaliacao;
+
     private LocalDate ultimoLogin;
-
-    public Usuario() {}
-
-    // Getters e Setters
-    public Long getId() {
-        return id;
-    }
-
-    public String getCidade() {
-        return cidade;
-    }
-
-    public void setCidade(String cidade) {
-        this.cidade = cidade;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public LocalDate getDataCadastro() {
-        return dataCadastro;
-    }
-
-    public void setDataCadastro(LocalDate dataCadastro) {
-        this.dataCadastro = dataCadastro;
-    }
-
-    public String getTelefone() {
-        return telefone;
-    }
-
-    public void setTelefone(String telefone) {
-        this.telefone = telefone;
-    }
-
-    public String getSenhaHash() {
-        return senhaHash;
-    }
-
-    public void setSenhaHash(String senhaHash) {
-        this.senhaHash = senhaHash;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public float getAvgAvaliacao() {
-        return avgAvaliacao;
-    }
-
-    public void setAvgAvaliacao(float avgAvaliacao) {
-        this.avgAvaliacao = avgAvaliacao;
-    }
-
-    public LocalDate getUltimoLogin() {
-        return ultimoLogin;
-    }
-
-    public void setUltimoLogin(LocalDate ultimoLogin) {
-        this.ultimoLogin = ultimoLogin;
-    }
 }

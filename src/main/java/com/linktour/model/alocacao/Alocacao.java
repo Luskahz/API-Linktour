@@ -1,14 +1,24 @@
 package com.linktour.model.alocacao;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 
 @Entity
 @Table(name = "alocacao")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+
 public class Alocacao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+
     private double latitude;
     private double longitude;
     private String nome;
@@ -18,14 +28,4 @@ public class Alocacao {
     private byte[] documentacao;
     @Lob
     private byte[] fachada;
-
-    public Alocacao() {}
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 }
