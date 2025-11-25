@@ -1,8 +1,7 @@
 package com.linktour.service;
 
 import com.linktour.model.alocacao.Alocacao;
-import com.linktour.repository.AlocacaoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.linktour.repository.alocacao.AlocacaoRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,8 +9,11 @@ import java.util.List;
 @Service
 public class AlocacaoService {
 
-    @Autowired
-    private AlocacaoRepository alocacaoRepository;
+    private final AlocacaoRepository alocacaoRepository;
+
+    public AlocacaoService(AlocacaoRepository alocacaoRepository) {
+        this.alocacaoRepository = alocacaoRepository;
+    }
 
     public Alocacao criar(Alocacao alocacao) {
         return alocacaoRepository.save(alocacao);
@@ -21,11 +23,15 @@ public class AlocacaoService {
         return alocacaoRepository.findAll();
     }
 
-    public Alocacao buscarPorId(Long id) {
-        return alocacaoRepository.findById(id).orElse(null);
+    public Alocacao buscar(Long id) {
+        return alocacaoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Alocação não encontrada"));
     }
 
     public void deletar(Long id) {
+        if (!alocacaoRepository.existsById(id)) {
+            throw new RuntimeException("Alocação não encontrada");
+        }
         alocacaoRepository.deleteById(id);
     }
 }

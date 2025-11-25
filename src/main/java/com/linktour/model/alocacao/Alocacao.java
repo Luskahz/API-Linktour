@@ -1,10 +1,10 @@
 package com.linktour.model.alocacao;
-
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 
 @Entity
 @Table(name = "alocacao")
@@ -19,13 +19,22 @@ public class Alocacao {
     private Long id;
 
 
-    private double latitude;
-    private double longitude;
+    @NotNull
+    private Double latitude;
+
+    @NotNull
+    private Double longitude;
+
+    @NotBlank
     private String nome;
+
+    @NotBlank
     private String descricao;
-    private int lotacao;
-    @Lob
-    private byte[] documentacao;
-    @Lob
-    private byte[] fachada;
+
+    @NotNull
+    private Integer lotacao;
+
+    private String url_documentacao;
+
+    private String url_fachada;
 }

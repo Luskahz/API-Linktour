@@ -1,39 +1,44 @@
 package com.linktour.service;
 
-import com.linktour.dto.evento.EventoRequestDTO;
+import com.linktour.dto.evento.EventoCreateDTO;
 import com.linktour.exception.RecursoNaoEncontradoException;
+import com.linktour.mapper.EventoMapper;
 import com.linktour.model.publicacao.Evento;
 import com.linktour.model.alocacao.Alocacao;
-import com.linktour.repository.EventoRepository;
-import com.linktour.repository.AlocacaoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.linktour.model.usuario.Usuario;
+import com.linktour.repository.publicacao.EventoRepository;
+import com.linktour.repository.alocacao.AlocacaoRepository;
+import com.linktour.repository.usuario.UsuarioRepository;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
 public class EventoService {
 
-    @Autowired
-    private EventoRepository eventoRepository;
+    private final EventoRepository eventoRepository;
+    private final AlocacaoRepository alocacaoRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private AlocacaoRepository alocacaoRepository;
+    public EventoService(
+            EventoRepository eventoRepository,
+            AlocacaoRepository alocacaoRepository,
+            UsuarioRepository usuarioRepository
+    ) {
+        this.eventoRepository = eventoRepository;
+        this.alocacaoRepository = alocacaoRepository;
+        this.usuarioRepository = usuarioRepository;
+    }
 
-    public Evento criar(EventoRequestDTO dto) {
-
-        // verificar alocação
-        Alocacao aloc = alocacaoRepository.findById(dto.getAlocacaoId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("A alocação vinculada não existe."));
-
-        // montar entidade
-        Evento evento = new Evento();
-        evento.setTitulo(dto.getTitulo());
-        evento.setDescricao(dto.getDescricao());
-        evento.setCapacidade(dto.getCapacidade());
-        evento.setDataInicio(dto.getDataInicio());
-        evento.setDataFim(dto.getDataFim());
-        evento.setAlocacao(aloc);
+    public Evento criar(EventoCreateDTO dto) {
+        Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
+                .orElseThrow(() ->
+                        new RecursoNaoEncontradoException("O usuário vinculado não existe.")
+                );
+        Alocacao alocacao = alocacaoRepository.findById(dto.getIdAlocacao())
+                .orElseThrow(() ->
+                        new RecursoNaoEncontradoException("A alocação vinculada não existe.")
+                );
+        Evento evento = EventoMapper.toEntity(dto, usuario, alocacao);
 
         return eventoRepository.save(evento);
     }
@@ -42,14 +47,16 @@ public class EventoService {
         return eventoRepository.findAll();
     }
 
-    public Evento buscarPorId(Long id) {
+    public Evento buscar(Long id) {
         return eventoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+                .orElseThrow(() ->
+                        new RecursoNaoEncontradoException("Evento não encontrado.")
+                );
     }
 
     public void deletar(Long id) {
         if (!eventoRepository.existsById(id)) {
-            throw new RecursoNaoEncontradoException("Evento não encontrado");
+            throw new RecursoNaoEncontradoException("Evento não encontrado.");
         }
         eventoRepository.deleteById(id);
     }

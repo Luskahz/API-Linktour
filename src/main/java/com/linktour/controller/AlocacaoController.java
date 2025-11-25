@@ -26,7 +26,7 @@ public class AlocacaoController {
 
     @GetMapping("/{id}")
     public Alocacao buscarPorId(@PathVariable Long id) {
-        return alocacaoService.buscarPorId(id);
+        return alocacaoService.buscar(id);
     }
 
     @DeleteMapping("/{id}")

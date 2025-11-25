@@ -1,6 +1,6 @@
 package com.linktour.controller;
 
-import com.linktour.dto.evento.EventoRequestDTO;
+import com.linktour.dto.evento.EventoCreateDTO;
 import com.linktour.dto.evento.EventoResponseDTO;
 import com.linktour.mapper.EventoMapper;
 import com.linktour.model.publicacao.Evento;
@@ -18,7 +18,7 @@ public class EventoController {
     private EventoService eventoService;
 
     @PostMapping
-    public EventoResponseDTO criar(@RequestBody EventoRequestDTO dto) {
+    public EventoResponseDTO criar(@RequestBody EventoCreateDTO dto) {
         Evento eventoCriado = eventoService.criar(dto);
         return EventoMapper.toResponse(eventoCriado);
     }
@@ -32,8 +32,8 @@ public class EventoController {
     }
 
     @GetMapping("/{id}")
-    public EventoResponseDTO buscarPorId(@PathVariable Long id) {
-        return EventoMapper.toResponse(eventoService.buscarPorId(id));
+    public EventoResponseDTO buscar(@PathVariable Long id) {
+        return EventoMapper.toResponse(eventoService.buscar(id));
     }
 
     @DeleteMapping("/{id}")

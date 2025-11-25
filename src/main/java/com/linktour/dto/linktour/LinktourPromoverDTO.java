@@ -1,5 +1,4 @@
-package com.linktour.dto.usuario;
-import jakarta.validation.constraints.Email;
+package com.linktour.dto.linktour;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -9,11 +8,14 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginDTO {
-    @NotBlank @Email
-    private String email;
+public class LinktourPromoverDTO {
+
+    @NotNull
+    private Long idUsuario;
 
     @NotBlank
-    private String senha;
+    private String Status;
+
+
 
 }

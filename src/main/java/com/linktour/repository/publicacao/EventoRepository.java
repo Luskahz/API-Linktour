@@ -1,4 +1,4 @@
-package com.linktour.repository;
+package com.linktour.repository.publicacao;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.linktour.model.publicacao.Evento;

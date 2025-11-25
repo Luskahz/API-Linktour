@@ -1,36 +1,35 @@
 package com.linktour.model.usuario;
-
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "comum")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Comum extends Usuario {
 
+    @NotBlank
     private String cpf;
+
+    @NotBlank
     private String nomeCompleto;
+
+    @NotBlank
     private String preferencias;
+
+    @NotNull
     private LocalDate nascimento;
+
+    @NotBlank
     private String genero;
-    private int parceiro;
 
-    public Comum() {}
+    @NotNull
+    private Boolean parceiro;
 
-    public String getCpf() { return cpf; }
-    public void setCpf(String cpf) { this.cpf = cpf; }
-
-    public String getNomeCompleto() { return nomeCompleto; }
-    public void setNomeCompleto(String nomeCompleto) { this.nomeCompleto = nomeCompleto; }
-
-    public String getPreferencias() { return preferencias; }
-    public void setPreferencias(String preferencias) { this.preferencias = preferencias; }
-
-    public LocalDate getNascimento() { return nascimento; }
-    public void setNascimento(LocalDate nascimento) { this.nascimento = nascimento; }
-
-    public String getGenero() { return genero; }
-    public void setGenero(String genero) { this.genero = genero; }
-
-    public int getParceiro() { return parceiro; }
-    public void setParceiro(int parceiro) { this.parceiro = parceiro; }
 }

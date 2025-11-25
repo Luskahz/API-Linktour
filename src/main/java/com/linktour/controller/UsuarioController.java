@@ -1,10 +1,14 @@
 package com.linktour.controller;
 
 import com.linktour.dto.usuario.*;
-import com.linktour.mapper.UsuarioMapper;
+import com.linktour.dto.usuario.comum.ComumCreateDTO;
+import com.linktour.dto.usuario.comum.ComumResponseDTO;
+import com.linktour.mapper.usuario.ComumMapper;
+import com.linktour.mapper.usuario.usuarioMapper;
+import com.linktour.model.usuario.Comum;
 import com.linktour.model.usuario.Usuario;
-import com.linktour.model.usuario.Linktour;
 import com.linktour.service.UsuarioService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,42 +23,36 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+
     @PostMapping("/comum")
-    public UsuarioResponseDTO cadastrarComum(@RequestBody ComumRegistrarDTO dto) {
-        Usuario usuario = usuarioService.cadastrarComum(dto);
-        return UsuarioMapper.toResponse(usuario);
+    public ComumResponseDTO cadastrarComum(@RequestBody ComumCreateDTO dto) {
+        Comum comum = usuarioService.cadastrarComum(dto);
+        return ComumMapper.toResponse(comum);
     }
 
     @PostMapping("/login")
     public UsuarioResponseDTO login(@RequestBody LoginDTO dto) {
-        Usuario usuario = usuarioService.login(dto.getEmail(), dto.getSenha());
-        return UsuarioMapper.toResponse(usuario);
-    }
-
-    @PostMapping("/{id}/promover")
-    public UsuarioResponseDTO promover(
-            @PathVariable Long id,
-            @RequestBody PromoverDTO dto
-    ) {
-        Linktour link = usuarioService.promoverParaLinktour(id, dto.getRegistro());
-        return UsuarioMapper.toResponse(link);
+        Usuario usuario = usuarioService.login(dto);
+        return usuarioMapper.toResponse(usuario);
     }
 
     @GetMapping
     public List<UsuarioResponseDTO> listar() {
-        return usuarioService.listarTodos()
+        return usuarioService.listar()
                 .stream()
-                .map(UsuarioMapper::toResponse)
+                .map(usuarioMapper::toResponse)
                 .toList();
     }
 
     @GetMapping("/{id}")
-    public UsuarioResponseDTO buscarPorId(@PathVariable Long id) {
-        return UsuarioMapper.toResponse(usuarioService.buscarPorId(id));
+    public UsuarioResponseDTO buscar(@PathVariable Long id) {
+        return usuarioMapper.toResponse(usuarioService.buscar(id));
     }
 
     @DeleteMapping("/{id}")
-    public void deletar(@PathVariable Long id) {
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
         usuarioService.deletar(id);
+        return ResponseEntity.noContent().build();
     }
 }
+

@@ -1,18 +1,20 @@
 package com.linktour.dto.alocacao;
-
-import jakarta.persistence.Lob;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import jakarta.validation.constraints.NotNull;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class AlocacaoCreateDTO {
 
-    @NotNull @NotBlank
-    private double latitude;
+    @NotNull
+    private Double latitude;
 
-    @NotNull @NotBlank
-    private double longitude;
+    @NotNull
+    private Double longitude;
 
     @NotBlank
     private String nome;
@@ -20,6 +22,10 @@ public class AlocacaoCreateDTO {
     @NotBlank
     private String descricao;
 
-    @NotBlank
-    private int lotacao;
+    @NotNull
+    private Integer lotacao;
+
+    private String url_documentacao;
+
+    private String url_fachada;
 }

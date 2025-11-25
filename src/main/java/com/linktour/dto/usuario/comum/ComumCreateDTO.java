@@ -1,5 +1,4 @@
-package com.linktour.model.usuario;
-import jakarta.persistence.*;
+package com.linktour.dto.usuario.comum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,25 +6,17 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "usuario")
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-@Inheritance(strategy = InheritanceType.JOINED)
-public abstract class Usuario {
+@AllArgsConstructor
+public class ComumCreateDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @NotBlank
     private String cidade;
 
     @Email
-    @Column(unique = true, nullable = false)
     private String email;
 
     @NotNull
@@ -34,10 +25,28 @@ public abstract class Usuario {
     @NotBlank
     private String telefone;
 
-    @Column(nullable = false)
+    @NotBlank
     private String senhaHash;
 
     @NotBlank
     private String status;
-}
 
+    @NotBlank
+    private String cpf;
+
+    @NotBlank
+    private String nomeCompleto;
+
+    @NotBlank
+    private String preferencias;
+
+    @NotNull
+    private LocalDate nascimento;
+
+    @NotBlank
+    private String genero;
+
+    @NotNull
+    private Boolean parceiro;
+
+}
