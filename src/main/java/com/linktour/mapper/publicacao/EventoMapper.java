@@ -1,7 +1,7 @@
-package com.linktour.mapper;
+package com.linktour.mapper.publicacao;
 
-import com.linktour.dto.evento.EventoCreateDTO;
-import com.linktour.dto.evento.EventoResponseDTO;
+import com.linktour.dto.publicacao.evento.EventoCreateDTO;
+import com.linktour.dto.publicacao.evento.EventoResponseDTO;
 import com.linktour.model.publicacao.Evento;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.model.usuario.Usuario;

@@ -1,8 +1,8 @@
 package com.linktour.service;
 
-import com.linktour.dto.evento.EventoCreateDTO;
+import com.linktour.dto.publicacao.evento.EventoCreateDTO;
 import com.linktour.exception.RecursoNaoEncontradoException;
-import com.linktour.mapper.EventoMapper;
+import com.linktour.mapper.publicacao.EventoMapper;
 import com.linktour.model.publicacao.Evento;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.model.usuario.Usuario;

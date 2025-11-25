@@ -34,4 +34,13 @@ public class LinktourService {
 
         return linktourRepository.save(linktour);
     }
+    public void revogar(Long idUsuario) {
+
+        // Buscar registro de Linktour pelo id do usuário
+        Linktour link = linktourRepository.findByUsuarioId(idUsuario)
+                .orElseThrow(() ->
+                        new RecursoNaoEncontradoException("Este usuário não possui permissão Linktour.")
+                );
+        linktourRepository.deleteById(link.getRegistro());
+    }
 }

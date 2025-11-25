@@ -3,7 +3,7 @@ package com.linktour.mapper.usuario;
 import com.linktour.dto.usuario.UsuarioResponseDTO;
 import com.linktour.model.usuario.Usuario;
 
-public class usuarioMapper {
+public class UsuarioMapper {
     public static UsuarioResponseDTO toResponse(Usuario usuario) {
         return new UsuarioResponseDTO(
                 usuario.getId(),
