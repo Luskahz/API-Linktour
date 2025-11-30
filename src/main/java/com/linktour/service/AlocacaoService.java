@@ -6,6 +6,7 @@ import com.linktour.repository.alocacao.AlocacaoRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 @Service
 public class AlocacaoService {
 
@@ -18,7 +19,6 @@ public class AlocacaoService {
     public Alocacao criar(Alocacao alocacao) {
         return alocacaoRepository.save(alocacao);
     }
-
 
     public List<Alocacao> listar() {
         return alocacaoRepository.findAll();
@@ -39,26 +39,26 @@ public class AlocacaoService {
     public Alocacao atualizar(Long id, AlocacaoAtualizarDTO dto) {
         Alocacao existente = buscar(id);
 
-        if (dto.getLatitude() != null)
-            existente.setLatitude(dto.getLatitude());
+        if (dto.latitude() != null)
+            existente.setLatitude(dto.latitude());
 
-        if (dto.getLongitude() != null)
-            existente.setLongitude(dto.getLongitude());
+        if (dto.longitude() != null)
+            existente.setLongitude(dto.longitude());
 
-        if (dto.getNome() != null)
-            existente.setNome(dto.getNome());
+        if (dto.nome() != null)
+            existente.setNome(dto.nome());
 
-        if (dto.getDescricao() != null)
-            existente.setDescricao(dto.getDescricao());
+        if (dto.descricao() != null)
+            existente.setDescricao(dto.descricao());
 
-        if (dto.getLotacao() != null)
-            existente.setLotacao(dto.getLotacao());
+        if (dto.lotacao() != null)
+            existente.setLotacao(dto.lotacao());
 
-        if (dto.getUrl_documentacao() != null)
-            existente.setUrl_documentacao(dto.getUrl_documentacao());
+        if (dto.url_documentacao() != null)
+            existente.setUrl_documentacao(dto.url_documentacao());
 
-        if (dto.getUrl_fachada() != null)
-            existente.setUrl_fachada(dto.getUrl_fachada());
+        if (dto.url_fachada() != null)
+            existente.setUrl_fachada(dto.url_fachada());
 
         return alocacaoRepository.save(existente);
     }

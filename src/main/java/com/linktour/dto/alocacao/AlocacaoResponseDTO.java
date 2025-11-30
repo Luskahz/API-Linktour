@@ -1,19 +1,12 @@
 package com.linktour.dto.alocacao;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class AlocacaoResponseDTO {
-
-    private Long id;
-    private Double latitude;
-    private Double longitude;
-    private String nome;
-    private String descricao;
-    private Integer lotacao;
-    private String url_documentacao;
-    private String url_fachada;
-}
+public record AlocacaoResponseDTO(
+        Long id,
+        Double latitude,
+        Double longitude,
+        String nome,
+        String descricao,
+        Integer lotacao,
+        String url_documentacao,
+        String url_fachada
+) {}

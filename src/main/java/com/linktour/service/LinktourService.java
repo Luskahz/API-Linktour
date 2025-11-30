@@ -26,7 +26,7 @@ public class LinktourService {
 
     public Linktour promover(LinktourPromoverDTO dto) {
 
-        Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
+        Usuario usuario = usuarioRepository.findById(dto.idUsuario())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
 

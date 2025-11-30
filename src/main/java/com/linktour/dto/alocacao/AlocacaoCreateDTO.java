@@ -1,31 +1,17 @@
 package com.linktour.dto.alocacao;
+
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import jakarta.validation.constraints.NotNull;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class AlocacaoCreateDTO {
+public record AlocacaoCreateDTO(
+        @NotNull Double latitude,
+        @NotNull Double longitude,
 
-    @NotNull
-    private Double latitude;
+        @NotBlank String nome,
+        @NotBlank String descricao,
 
-    @NotNull
-    private Double longitude;
+        @NotNull Integer lotacao,
 
-    @NotBlank
-    private String nome;
-
-    @NotBlank
-    private String descricao;
-
-    @NotNull
-    private Integer lotacao;
-
-    private String url_documentacao;
-
-    private String url_fachada;
-}
+        String url_documentacao,
+        String url_fachada
+) {}

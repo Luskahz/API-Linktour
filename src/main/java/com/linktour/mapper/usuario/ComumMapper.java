@@ -10,43 +10,36 @@ public class ComumMapper {
         Comum comum = new Comum();
 
         // Campos herdados de Usuario
-        comum.setCidade(dto.getCidade());
-        comum.setEmail(dto.getEmail());
-        comum.setDataCadastro(dto.getDataCadastro());
-        comum.setTelefone(dto.getTelefone());
-        comum.setSenhaHash(dto.getSenhaHash());
-        comum.setStatus(dto.getStatus());
+        comum.setCidade(dto.cidade());
+        comum.setEmail(dto.email());
+        comum.setTelefone(dto.telefone());
+        comum.setSenhaHash(dto.senhaHash());
 
         // Campos específicos de Comum
-        comum.setCpf(dto.getCpf());
-        comum.setNomeCompleto(dto.getNomeCompleto());
-        comum.setPreferencias(dto.getPreferencias());
-        comum.setNascimento(dto.getNascimento());
-        comum.setGenero(dto.getGenero());
-        comum.setParceiro(dto.getParceiro());
+        comum.setCpf(dto.cpf());
+        comum.setNomeCompleto(dto.nomeCompleto());
+        comum.setPreferencias(dto.preferencias());
+        comum.setNascimento(dto.nascimento());
+        comum.setGenero(dto.genero());
 
         return comum;
     }
 
     public static ComumResponseDTO toResponse(Comum comum) {
-        ComumResponseDTO dto = new ComumResponseDTO();
-
-        // Campos herdados de Usuario
-        dto.setId(comum.getId());
-        dto.setCidade(comum.getCidade());
-        dto.setEmail(comum.getEmail());
-        dto.setDataCadastro(comum.getDataCadastro());
-        dto.setTelefone(comum.getTelefone());
-        dto.setStatus(comum.getStatus());
-
-        // Campos específicos de Comum
-        dto.setCpf(comum.getCpf());
-        dto.setNomeCompleto(comum.getNomeCompleto());
-        dto.setPreferencias(comum.getPreferencias());
-        dto.setNascimento(comum.getNascimento());
-        dto.setGenero(comum.getGenero());
-        dto.setParceiro(comum.getParceiro());
-
-        return dto;
+        return new ComumResponseDTO(
+                comum.getId(),
+                comum.getCidade(),
+                comum.getEmail(),
+                comum.getDataCadastro(),
+                comum.getTelefone(),
+                comum.getSenhaHash(),
+                comum.getStatus(),
+                comum.getCpf(),
+                comum.getNomeCompleto(),
+                comum.getPreferencias(),
+                comum.getNascimento(),
+                comum.getGenero(),
+                comum.getParceiro()
+        );
     }
 }

@@ -14,7 +14,7 @@ public class Linktour {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long registro; // PK autoincrement independente
+    private Long registro;
 
     @OneToOne
     @JoinColumn(name = "usuario_id", unique = true, nullable = false)

@@ -1,6 +1,5 @@
 package com.linktour.mapper;
 
-
 import com.linktour.dto.alocacao.AlocacaoCreateDTO;
 import com.linktour.dto.alocacao.AlocacaoResponseDTO;
 import com.linktour.model.alocacao.Alocacao;
@@ -10,13 +9,13 @@ public class AlocacaoMapper {
     public static Alocacao toEntity(AlocacaoCreateDTO dto) {
         Alocacao a = new Alocacao();
 
-        a.setLatitude(dto.getLatitude());
-        a.setLongitude(dto.getLongitude());
-        a.setNome(dto.getNome());
-        a.setDescricao(dto.getDescricao());
-        a.setLotacao(dto.getLotacao());
-        a.setUrl_documentacao(dto.getUrl_documentacao());
-        a.setUrl_fachada(dto.getUrl_fachada());
+        a.setLatitude(dto.latitude());
+        a.setLongitude(dto.longitude());
+        a.setNome(dto.nome());
+        a.setDescricao(dto.descricao());
+        a.setLotacao(dto.lotacao());
+        a.setUrl_documentacao(dto.url_documentacao());
+        a.setUrl_fachada(dto.url_fachada());
 
         return a;
     }

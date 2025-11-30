@@ -1,6 +1,7 @@
 package com.linktour.controller;
 
 import com.linktour.dto.usuario.*;
+import com.linktour.dto.usuario.comum.ComumAtualizarDTO;
 import com.linktour.dto.usuario.comum.ComumCreateDTO;
 import com.linktour.dto.usuario.comum.ComumResponseDTO;
 import com.linktour.mapper.usuario.ComumMapper;
@@ -34,6 +35,11 @@ public class UsuarioController {
         Usuario usuario = usuarioService.login(dto);
         return mapUsuarioToDTO(usuario);
     }
+    @PostMapping("/{id}/solicitar-parceria")
+    public ResponseEntity<Void> solicitarParceria(@PathVariable Long id) {
+        usuarioService.solicitarParceria(id);
+        return ResponseEntity.noContent().build();
+    }
 
 
     @GetMapping
@@ -52,12 +58,13 @@ public class UsuarioController {
     }
 
 
+    @PostMapping("/{id}/eventos")
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         usuarioService.deletar(id);
         return ResponseEntity.noContent().build();
     }
-
 
     private Object mapUsuarioToDTO(Usuario usuario) {
 

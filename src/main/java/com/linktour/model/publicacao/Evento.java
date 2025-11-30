@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "evento")
@@ -21,9 +22,9 @@ public class Evento extends Publicacao {
     private Integer capacidade;
 
     @NotNull
-    private LocalDate dataInicio;
+    private LocalDateTime dataInicio;
 
     @NotNull
-    private LocalDate dataFim;
+    private LocalDateTime dataFim;
 
 }

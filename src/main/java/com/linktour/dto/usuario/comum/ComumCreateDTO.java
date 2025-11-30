@@ -1,52 +1,24 @@
 package com.linktour.dto.usuario.comum;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ComumCreateDTO {
+public record ComumCreateDTO(
+        @NotBlank String cpf,
+        @NotBlank String nomeCompleto,
 
+        @Email String email,
 
-    @NotBlank
-    private String cidade;
+        @NotBlank String senhaHash,
 
-    @Email
-    private String email;
+        @NotBlank String cidade,
+        @NotBlank String telefone,
+        @NotBlank String preferencias,
 
-    @NotNull
-    private LocalDate dataCadastro;
+        @NotNull LocalDate nascimento,
 
-    @NotBlank
-    private String telefone;
-
-    @NotBlank
-    private String senhaHash;
-
-    @NotBlank
-    private String status;
-
-    @NotBlank
-    private String cpf;
-
-    @NotBlank
-    private String nomeCompleto;
-
-    @NotBlank
-    private String preferencias;
-
-    @NotNull
-    private LocalDate nascimento;
-
-    @NotBlank
-    private String genero;
-
-    @NotNull
-    private Boolean parceiro;
-
-}
+        @NotBlank String genero
+) {}

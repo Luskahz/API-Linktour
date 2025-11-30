@@ -11,7 +11,7 @@ public class LinktourMapper {
         Linktour link = new Linktour();
 
         link.setUsuario(usuario);
-        link.setStatus(dto.getStatus());
+        link.setStatus(dto.status());
 
         return link;
     }

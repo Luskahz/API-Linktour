@@ -2,7 +2,6 @@ package com.linktour.model.publicacao;
 import com.linktour.model.usuario.Usuario;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,8 +22,8 @@ public abstract class Publicacao {
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
-    @NotNull
-    private LocalDateTime dataCriacao;
+
+    private LocalDateTime dataCriacao = LocalDateTime.now();
 
     @NotBlank
     private String titulo;

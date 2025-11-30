@@ -1,37 +1,21 @@
 package com.linktour.dto.publicacao.evento;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class EventoCreateDTO {
-    @NotNull
-    private Long idUsuario;
+public record EventoCreateDTO(
+        @NotNull Long idUsuario,
+        @NotNull LocalDateTime dataCriacao,
 
-    @NotNull
-    private LocalDateTime dataCriacao;
+        @NotBlank String titulo,
+        @NotBlank String descricao,
 
-    @NotBlank
-    private String titulo;
+        @NotNull Long idAlocacao,
 
-    @NotBlank
-    private String descricao;
+        Integer capacidade,
 
-    @NotNull
-    private Long idAlocacao;
-
-    private Integer capacidade;
-
-    @NotNull
-    private LocalDate dataInicio;
-
-    @NotNull
-    private LocalDate dataFim;
-
-}
+        @NotNull LocalDateTime dataInicio,
+        @NotNull LocalDateTime dataFim
+) {}

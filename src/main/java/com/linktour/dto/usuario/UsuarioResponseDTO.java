@@ -1,16 +1,9 @@
 package com.linktour.dto.usuario;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class UsuarioResponseDTO {
-    private Long id;
-    private String email;
-    private String cidade;
-    private String telefone;
-    private String status;
-}
+public record UsuarioResponseDTO(
+        Long id,
+        String email,
+        String cidade,
+        String telefone,
+        String status
+) {}

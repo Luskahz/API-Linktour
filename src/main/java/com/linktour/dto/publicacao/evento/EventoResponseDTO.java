@@ -1,23 +1,15 @@
 package com.linktour.dto.publicacao.evento;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class EventoResponseDTO {
-
-    private Long id;
-    private Long idUsuario;
-    private LocalDateTime dataCriacao;
-    private String titulo;
-    private String descricao;
-    private Long idAlocacao;
-    private Integer capacidade;
-    private LocalDate dataInicio;
-    private LocalDate dataFim;
-
-}
+public record EventoResponseDTO(
+        Long id,
+        Long idUsuario,
+        LocalDateTime dataCriacao,
+        String titulo,
+        String descricao,
+        Long idAlocacao,
+        Integer capacidade,
+        LocalDateTime dataInicio,
+        LocalDateTime dataFim
+) {}

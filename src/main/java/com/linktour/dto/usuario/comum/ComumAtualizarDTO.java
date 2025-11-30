@@ -1,25 +1,19 @@
 package com.linktour.dto.usuario.comum;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ComumAtualizarDTO {
-    private String cidade;
-    private String email;
-    private LocalDate dataCadastro;
-    private String telefone;
-    private String senhaHash;
-    private String status;
-    private String cpf;
-    private String nomeCompleto;
-    private String preferencias;
-    private LocalDate nascimento;
-    private String genero;
-    private Boolean parceiro;
-
-}
+public record ComumAtualizarDTO(
+        String cidade,
+        String email,
+        LocalDateTime dataCadastro,
+        String telefone,
+        String senhaHash,
+        String status,
+        String cpf,
+        String nomeCompleto,
+        String preferencias,
+        LocalDate nascimento,
+        String genero,
+        Boolean parceiro
+) {}

@@ -13,15 +13,15 @@ public class EventoMapper {
 
         // Publicacao (classe mãe)
         evento.setUsuario(usuario);
-        evento.setDataCriacao(dto.getDataCriacao());
-        evento.setTitulo(dto.getTitulo());
-        evento.setDescricao(dto.getDescricao());
+        evento.setDataCriacao(dto.dataCriacao());
+        evento.setTitulo(dto.titulo());
+        evento.setDescricao(dto.descricao());
 
         // Evento (classe filha)
         evento.setAlocacao(alocacao);
-        evento.setCapacidade(dto.getCapacidade());
-        evento.setDataInicio(dto.getDataInicio());
-        evento.setDataFim(dto.getDataFim());
+        evento.setCapacidade(dto.capacidade());
+        evento.setDataInicio(dto.dataInicio());
+        evento.setDataFim(dto.dataFim());
 
         return evento;
     }

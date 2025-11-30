@@ -11,6 +11,7 @@ import com.linktour.repository.usuario.UsuarioRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -27,29 +28,32 @@ public class UsuarioService {
         this.comumRepository = comumRepository;
     }
 
-
-
     public Comum cadastrarComum(ComumCreateDTO dto) {
 
-        usuarioRepository.findByEmail(dto.getEmail())
+        usuarioRepository.findByEmail(dto.email())
                 .ifPresent(u -> {
                     throw new RuntimeException("Email já cadastrado.");
                 });
-        String hash = BCrypt.hashpw(dto.getSenhaHash(), BCrypt.gensalt());
-        dto.setSenhaHash(hash);
+
+        String hash = BCrypt.hashpw(dto.senhaHash(), BCrypt.gensalt());
+
         Comum comum = ComumMapper.toEntity(dto);
+        comum.setSenhaHash(hash);
+        comum.setParceiro(false);
+        comum.setStatus("ATIVO");
+        comum.setDataCadastro(LocalDateTime.now());
 
         return comumRepository.save(comum);
     }
 
-
     public Usuario login(LoginDTO dto) {
 
-        Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
+        Usuario usuario = usuarioRepository.findByEmail(dto.email())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Email não encontrado"));
-        if (!BCrypt.checkpw(dto.getSenha(), usuario.getSenhaHash())) {
+
+        if (!BCrypt.checkpw(dto.senha(), usuario.getSenhaHash())) {
             throw new RuntimeException("Senha incorreta.");
-        }//totalmente inseguro, mas é pura alfabetização professora! outro dia aprendemos a fazer token e sessãokkkk
+        }
 
         return usuario;
     }
@@ -63,6 +67,14 @@ public class UsuarioService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
     }
 
+    public void solicitarParceria(Long id) {
+        Comum comum = comumRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
+
+        comum.setStatus("SOLICITADO");
+        comumRepository.save(comum);
+    }
+
     public void deletar(Long id) {
         if (!usuarioRepository.existsById(id)) {
             throw new RecursoNaoEncontradoException("Usuário não encontrado");
@@ -70,4 +82,3 @@ public class UsuarioService {
         usuarioRepository.deleteById(id);
     }
 }
-

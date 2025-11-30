@@ -30,11 +30,11 @@ public class EventoService {
     }
 
     public Evento criar(EventoCreateDTO dto) {
-        Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
+        Usuario usuario = usuarioRepository.findById(dto.idUsuario())
                 .orElseThrow(() ->
                         new RecursoNaoEncontradoException("O usuário vinculado não existe.")
                 );
-        Alocacao alocacao = alocacaoRepository.findById(dto.getIdAlocacao())
+        Alocacao alocacao = alocacaoRepository.findById(dto.idAlocacao())
                 .orElseThrow(() ->
                         new RecursoNaoEncontradoException("A alocação vinculada não existe.")
                 );
