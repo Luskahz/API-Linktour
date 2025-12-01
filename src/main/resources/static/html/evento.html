@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>linktour • evento</title>
+
+    <link rel="stylesheet" href="../css/evento.css" />
+
+    <!-- Leaflet (OpenStreetMap) -->
+    <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+</head>
+
+<body>
+<header>
+    <div class="title" onclick="goHome()" role="button" tabindex="0">linktour</div>
+
+    <div class="hdr-actions">
+        <button class="hdr-btn" id="btnVoltar" type="button" onclick="goHome()">Voltar</button>
+
+        <button class="avatar-btn" id="hdrAvatarBtn" type="button" onclick="toggleUserMenu()">
+            <img id="hdrAvatarImg" alt="Avatar do usuário" />
+        </button>
+
+        <button class="hdr-btn" id="btnEntrar" type="button" onclick="goEntrar()">Entrar</button>
+    </div>
+</header>
+
+<main>
+    <section class="panel">
+        <div class="content">
+            <div class="error" id="pageError"></div>
+            <div class="notice" id="pageNotice"></div>
+
+            <div class="layout">
+                <!-- COLUNA PRINCIPAL -->
+                <section class="maincol" aria-label="detalhes do evento">
+                    <div class="card">
+                        <div class="topline">
+                            <div class="badge" id="eventBadge">Carregando...</div>
+                            <div class="mini" id="eventCreated">—</div>
+                        </div>
+
+                        <div class="event-title" id="eventTitle">Evento</div>
+                        <div class="event-desc" id="eventDesc"></div>
+
+                        <div class="kv" id="eventKv"></div>
+
+                        <div class="mini" id="eventCountdown">—</div>
+
+                        <div class="actions">
+                            <button class="btn primary" id="btnParticipacao" type="button">Participar</button>
+                            <button class="btn" id="btnMapa" type="button">Ver no mapa</button>
+                        </div>
+                    </div>
+
+                    <div class="grid2">
+                        <div class="card">
+                            <div class="box-title">Organizador</div>
+                            <div class="person" id="autorBox">
+                                <div class="avatar" id="autorAvatar">?</div>
+                                <div class="person-meta">
+                                    <div class="person-name" id="autorNome">—</div>
+                                    <div class="mini" id="autorCidade">—</div>
+                                    <div class="mini" id="autorContato">—</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="box-title">Local (Alocação)</div>
+                            <div class="place">
+                                <div class="place-name" id="alocNome">—</div>
+                                <div class="mini" id="alocDesc">—</div>
+                                <div class="kv" id="alocKv"></div>
+
+                                <div class="place-media" id="alocMedia"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SIDEBAR -->
+                <aside class="sidebar" aria-label="mapa">
+                    <div class="card">
+                        <div class="box-title">Localização</div>
+                        <div class="map-square" id="map"></div>
+                        <div class="mini" id="mapHint">—</div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- MENU USUÁRIO -->
+<div class="user-menu-bg" id="userMenuBg">
+    <div class="user-menu" id="userMenu" onclick="event.stopPropagation()">
+        <div class="um-header">
+            <img id="umAvatarImg" class="um-avatar" alt="Avatar do usuário" />
+            <div>
+                <div class="um-name" id="umName">Usuário</div>
+                <div class="um-mini" id="umCity">—</div>
+            </div>
+        </div>
+
+        <div class="um-items">
+            <button class="um-item" type="button" onclick="goPerfil()">Perfil</button>
+            <button class="um-item exit" type="button" onclick="logout()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div>© linktour 2025 • IFSP Caraguatatuba</div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/evento.js"></script>
+</body>
+</html>

@@ -313,6 +313,9 @@ function goPerfil() {
   if (!userId) return goEntrar();
   location.href = `./perfil.html?id=${encodeURIComponent(userId)}`;
 }
+function goEvento(eventoId) {
+  location.href = `./evento.html?id=${encodeURIComponent(eventoId)}`;
+}
 
 // ===== Menu =====
 function toggleUserMenu(force) {
@@ -454,13 +457,14 @@ async function ensureParticipacao(eventoId) {
 function applyParticipacaoButtonState(ev, card, btn) {
   if (!btn) return;
 
-  // deslogado: pode clicar, mas manda pro login (mas sua home é ríspida, então aqui é só segurança extra)
+  // deslogado
   if (!userId) {
     btn.className = "btn primary";
     btn.textContent = "Participar";
     btn.disabled = false;
     btn.title = "";
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      if (e?.stopPropagation) e.stopPropagation();
       showNotice("Você precisa entrar para participar.");
       goEntrar();
     };
@@ -475,13 +479,19 @@ function applyParticipacaoButtonState(ev, card, btn) {
     btn.textContent = "Cancelar participação";
     btn.disabled = !canCancel(ev);
     btn.title = btn.disabled ? "Não é possível cancelar após o início do evento." : "";
-    btn.onclick = () => cancelarParticipacao(ev, btn, card);
+    btn.onclick = (e) => {
+      if (e?.stopPropagation) e.stopPropagation();
+      cancelarParticipacao(ev, btn, card);
+    };
   } else {
     btn.className = "btn primary";
     btn.textContent = "Participar";
     btn.disabled = !canJoin(ev);
     btn.title = btn.disabled ? "Disponível somente até 10 minutos antes do início." : "";
-    btn.onclick = () => participar(ev, btn, card);
+    btn.onclick = (e) => {
+      if (e?.stopPropagation) e.stopPropagation();
+      participar(ev, btn, card);
+    };
   }
 }
 
@@ -589,7 +599,36 @@ function verNoMapa(eventoId) {
   location.href = `./mapa.html?eventoId=${encodeURIComponent(eventoId)}`;
 }
 
+// ===== Card-click helpers =====
+function isInteractiveTarget(target) {
+  if (!target) return false;
+  // qualquer coisa "clicável" dentro do card não deve disparar navegação do card
+  return !!target.closest("button, a, input, select, textarea, label, [role='button']");
+}
+
+function makeCardClickable(cardEl, eventoId) {
+  // acessibilidade (semântica de botão)
+  cardEl.setAttribute("role", "button");
+  cardEl.setAttribute("tabindex", "0");
+  cardEl.classList.add("card-clickable");
+  cardEl.setAttribute("data-event-id", String(eventoId));
+
+  cardEl.addEventListener("click", (e) => {
+    if (isInteractiveTarget(e.target)) return;
+    goEvento(eventoId);
+  });
+
+  cardEl.addEventListener("keydown", (e) => {
+    if (isInteractiveTarget(e.target)) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      goEvento(eventoId);
+    }
+  });
+}
+
 // ===== Render (cards só de EVENTO) =====
+// (FUNÇÃO INTEIRA ajustada)
 function renderFeed(lista) {
   stopAllCountdowns();
 
@@ -620,6 +659,9 @@ function renderFeed(lista) {
     const card = document.createElement("div");
     card.className = "card";
 
+    // card inteiro vira "botão" pra abrir /evento.html?id=...
+    makeCardClickable(card, ev.id);
+
     const header = document.createElement("div");
     header.style.display = "flex";
     header.style.alignItems = "center";
@@ -647,6 +689,9 @@ function renderFeed(lista) {
     const title = document.createElement("div");
     title.className = "card-title";
     title.textContent = ev?.titulo ?? ("Evento #" + (ev?.id ?? "?"));
+
+    // dica visual: título clicável também (mas sem duplicar navegação)
+    title.classList.add("card-title-link");
 
     const desc = document.createElement("div");
     desc.className = "card-desc";
@@ -677,16 +722,34 @@ function renderFeed(lista) {
     btnParticipar.type = "button";
     btnParticipar.textContent = "Participar";
     btnParticipar.setAttribute("data-participacao-btn", "1");
-    btnParticipar.onclick = () => participar(ev, btnParticipar, card);
+
+    // IMPORTANTÍSSIMO: impedir que clique no botão dispare o clique do card
+    btnParticipar.addEventListener("click", (e) => {
+      e.stopPropagation();
+      participar(ev, btnParticipar, card);
+    });
 
     const btnMapa = document.createElement("button");
     btnMapa.className = "btn";
     btnMapa.type = "button";
     btnMapa.textContent = "Ver no mapa";
-    btnMapa.onclick = () => verNoMapa(ev.id);
+    btnMapa.addEventListener("click", (e) => {
+      e.stopPropagation();
+      verNoMapa(ev.id);
+    });
+
+    const btnDetalhes = document.createElement("button");
+    btnDetalhes.className = "btn";
+    btnDetalhes.type = "button";
+    btnDetalhes.textContent = "Detalhes";
+    btnDetalhes.addEventListener("click", (e) => {
+      e.stopPropagation();
+      goEvento(ev.id);
+    });
 
     actions.appendChild(btnParticipar);
     actions.appendChild(btnMapa);
+    actions.appendChild(btnDetalhes);
 
     card.appendChild(header);
     card.appendChild(title);
@@ -770,8 +833,6 @@ function applyFilters() {
   }
 
   // datas:
-  // - evento: usa dataInicio/dataFim
-  // - publicação: usa dataCriacao (se existir no futuro)
   if (f.de) {
     const start = f.de + "T00:00:00";
     out = out.filter(p => {
@@ -787,12 +848,12 @@ function applyFilters() {
     });
   }
 
-  // cidade (NOTA): filtra por cidade do AUTOR (cache /usuarios/{id})
+  // cidade (autor)
   if (f.cidade) {
     const c = f.cidade.toLowerCase();
     out = out.filter(p => {
       const autor = authorCache.get(p?.idUsuario);
-      if (!autor) return true; // não exclui se não tiver cache
+      if (!autor) return true;
       return String(autor?.cidade || "").toLowerCase().includes(c);
     });
   }
@@ -851,7 +912,7 @@ async function refreshFeed() {
 
   publicacoes = await resp.json();
 
-  // pré-carrega autores pra filtro de cidade funcionar melhor
+  // pré-carrega autores
   const ids = [...new Set((publicacoes || []).map(p => p?.idUsuario).filter(Boolean))];
   await Promise.all(ids.map(id => getAutor(id)));
 
@@ -877,10 +938,10 @@ async function refreshFeed() {
 
   (async () => {
     try {
-      await refreshUser();           // se falhar, redireciona
+      await refreshUser();
       applyHeaderAndMenuAvatar();
 
-      await refreshFeed();           // se falhar por auth, redireciona
+      await refreshFeed();
       applyFilters();
     } catch (e) {
       console.error(e);

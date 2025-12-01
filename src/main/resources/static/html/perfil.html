@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>linktour • perfil</title>
+
+    <link rel="stylesheet" href="../css/perfil.css" />
+</head>
+
+<body>
+<header>
+    <a class="title-link" href="./home.html">linktour</a>
+    <div class="hdr-actions">
+        <button class="avatar-btn" type="button" onclick="toggleUserMenu()">
+            <img id="hdrAvatarImg" />
+        </button>
+    </div>
+</header>
+
+<main>
+    <section class="hero" aria-label="perfil">
+        <div class="cover"></div>
+
+        <div class="hero-body">
+            <div class="profile-row">
+                <div class="avatar" id="avatar">?</div>
+
+                <div class="user-meta">
+                    <div class="name" id="nomeCompleto">Carregando...</div>
+
+                    <!-- email removido da UI -->
+                    <div class="subline" id="subline">
+                        <span class="pill" id="pillCidade">cidade</span>
+                    </div>
+
+                    <!-- aqui fica: solicitar parceria / status + editar perfil -->
+                    <div class="hero-actions" id="parceriaArea"></div>
+
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="label">Eventos</div>
+                            <div class="value" id="countEventos">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="label">Alocações</div>
+                            <div class="value" id="countAlocacoes">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mini" id="lastUpdate"></div>
+        </div>
+    </section>
+
+    <section class="panel" aria-label="conteúdo">
+        <div class="tabs">
+            <div class="tab active" id="tabEventos" onclick="setTab('eventos')">Eventos</div>
+            <div class="tab" id="tabAlocacoes" onclick="setTab('alocacoes')">Alocações</div>
+        </div>
+
+        <div class="content">
+            <div class="error" id="pageError"></div>
+            <div class="notice" id="pageNotice"></div>
+
+            <div class="list" id="listaEventos"></div>
+            <div class="list" id="listaAlocacoes" style="display:none;"></div>
+
+            <div class="footer-actions" id="footerActions">
+                <button class="btn primary" type="button" id="btnAdd" onclick="openAddModal()">+ Adicionar evento</button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- MODAL: EDITAR PERFIL -->
+<div class="modal-bg" id="modalPerfil">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="perfilTitle" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="perfilTitle">Editar perfil</h3>
+            <button class="x" type="button" onclick="closeModal('modalPerfil')">X</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="error" id="perfilError"></div>
+
+            <div class="grid2">
+                <div class="row">
+                    <label class="req">Nome completo</label>
+                    <input id="pNomeCompleto" type="text" autocomplete="name" />
+                </div>
+
+                <div class="row">
+                    <label class="req">Cidade</label>
+                    <input id="pCidade" type="text" autocomplete="address-level2" />
+                </div>
+            </div>
+
+            <div class="grid2">
+                <div class="row">
+                    <label class="req">Email</label>
+                    <input id="pEmail" type="email" autocomplete="email" />
+                </div>
+
+                <div class="row">
+                    <label>Telefone</label>
+                    <input id="pTelefone" type="tel" autocomplete="tel" />
+                </div>
+            </div>
+
+            <div class="grid2">
+                <div class="row">
+                    <label>CPF</label>
+                    <input id="pCpf" type="text" inputmode="numeric" placeholder="opcional" />
+                </div>
+
+                <div class="row">
+                    <label>Nascimento</label>
+                    <input id="pNascimento" type="date" />
+                </div>
+            </div>
+
+            <div class="row">
+                <label>Gênero</label>
+                <input id="pGenero" type="text" list="generos" placeholder="opcional" />
+                <datalist id="generos">
+                    <option value="MASCULINO"></option>
+                    <option value="FEMININO"></option>
+                    <option value="OUTRO"></option>
+                    <option value="PREFIRO_NAO_DIZER"></option>
+                </datalist>
+            </div>
+
+            <div class="row">
+                <label>Preferências</label>
+                <textarea id="pPreferencias" placeholder="opcional"></textarea>
+            </div>
+
+            <div class="actions">
+                <button class="btn primary" type="button" onclick="salvarPerfil()">Salvar</button>
+                <button class="btn" type="button" onclick="closeModal('modalPerfil')">Cancelar</button>
+            </div>
+
+            <div class="mini">PUT /usuarios/{id}/atualizar → ComumAtualizarDTO</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADICIONAR EVENTO -->
+<div class="modal-bg" id="modalEvento">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="eventoTitle" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="eventoTitle">Adicionar evento</h3>
+            <button class="x" type="button" onclick="closeModal('modalEvento')">X</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="error" id="eventoError"></div>
+
+            <div class="row">
+                <label class="req">Título</label>
+                <input id="evTitulo" type="text" />
+            </div>
+
+            <div class="row">
+                <label class="req">Descrição</label>
+                <textarea id="evDescricao"></textarea>
+            </div>
+
+            <div class="grid2">
+                <div class="row">
+                    <label class="req">Alocação</label>
+                    <select id="evIdAlocacao"></select>
+                </div>
+                <div class="row">
+                    <label>Capacidade</label>
+                    <input id="evCapacidade" type="number" min="0" placeholder="opcional" />
+                </div>
+            </div>
+
+            <div class="grid2">
+                <div class="row">
+                    <label class="req">Início</label>
+                    <input id="evInicio" type="datetime-local" />
+                </div>
+                <div class="row">
+                    <label class="req">Fim</label>
+                    <input id="evFim" type="datetime-local" />
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn primary" type="button" onclick="criarEvento()">Salvar</button>
+                <button class="btn" type="button" onclick="closeModal('modalEvento')">Cancelar</button>
+            </div>
+
+            <div class="mini">POST /publicacoes/evento → EventoCreateDTO</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADICIONAR ALOCAÇÃO -->
+<div class="modal-bg" id="modalAlocacao">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="alocTitle" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="alocTitle">Adicionar alocação</h3>
+            <button class="x" type="button" onclick="closeModal('modalAlocacao')">X</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="error" id="alocError"></div>
+
+            <div class="row">
+                <label class="req">Nome</label>
+                <input id="aNome" type="text" />
+            </div>
+
+            <div class="row">
+                <label class="req">Descrição</label>
+                <textarea id="aDescricao"></textarea>
+            </div>
+
+            <div class="grid2">
+                <div class="row">
+                    <label class="req">Lotação</label>
+                    <input id="aLotacao" type="number" min="0" />
+                </div>
+                <div class="row">
+                    <label>URL Documentação</label>
+                    <input id="aDoc" type="text" placeholder="opcional" />
+                </div>
+            </div>
+
+            <div class="grid2">
+                <div class="row">
+                    <label class="req">Latitude</label>
+                    <input id="aLat" type="number" step="any" />
+                </div>
+                <div class="row">
+                    <label class="req">Longitude</label>
+                    <input id="aLng" type="number" step="any" />
+                </div>
+            </div>
+
+            <div class="row">
+                <label>URL Fachada</label>
+                <input id="aFachada" type="text" placeholder="opcional" />
+            </div>
+
+            <div class="actions">
+                <button class="btn primary" type="button" onclick="criarAlocacao()">Salvar</button>
+                <button class="btn" type="button" onclick="closeModal('modalAlocacao')">Cancelar</button>
+            </div>
+
+            <div class="mini">POST /alocacoes → AlocacaoCreateDTO</div>
+        </div>
+    </div>
+</div>
+<div class="user-menu-bg" id="userMenuBg">
+    <div class="user-menu" id="userMenu" onclick="event.stopPropagation()">
+    <div class="um-header">
+            <img id="umAvatarImg" class="um-avatar" />
+            <div class="um-name" id="umName"></div>
+        </div>
+
+        <div class="um-items">
+            <button class="um-item exit" onclick="logout()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/perfil.js"></script>
+</body>
+</html>
