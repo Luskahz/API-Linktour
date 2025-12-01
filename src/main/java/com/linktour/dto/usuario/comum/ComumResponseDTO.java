@@ -16,5 +16,5 @@ public record ComumResponseDTO(
         String preferencias,
         LocalDate nascimento,
         String genero,
-        Boolean parceiro
+        String parceiro
 ) {}

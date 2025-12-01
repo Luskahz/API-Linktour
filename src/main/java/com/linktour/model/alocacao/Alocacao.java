@@ -1,4 +1,5 @@
 package com.linktour.model.alocacao;
+import com.linktour.model.usuario.Usuario;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -37,4 +38,8 @@ public class Alocacao {
     private String url_documentacao;
 
     private String url_fachada;
+
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
 }

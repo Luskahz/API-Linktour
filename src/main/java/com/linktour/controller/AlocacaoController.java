@@ -3,6 +3,8 @@ package com.linktour.controller;
 import com.linktour.dto.alocacao.AlocacaoAtualizarDTO;
 import com.linktour.dto.alocacao.AlocacaoCreateDTO;
 import com.linktour.dto.alocacao.AlocacaoResponseDTO;
+import com.linktour.dto.usuario.comum.ComumAtualizarDTO;
+import com.linktour.dto.usuario.comum.ComumResponseDTO;
 import com.linktour.mapper.AlocacaoMapper;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.service.AlocacaoService;
@@ -10,21 +12,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @RestController
 @RequestMapping("/alocacoes")
 public class AlocacaoController {
 
     private final AlocacaoService alocacaoService;
+
     public AlocacaoController(AlocacaoService alocacaoService) {
         this.alocacaoService = alocacaoService;
     }
 
     @PostMapping
     public ResponseEntity<AlocacaoResponseDTO> criar(@RequestBody AlocacaoCreateDTO dto) {
-        Alocacao alocacao = AlocacaoMapper.toEntity(dto);
-        Alocacao criada = alocacaoService.criar(alocacao);
+        Alocacao criada = alocacaoService.criar(dto);
         return ResponseEntity.ok(AlocacaoMapper.toResponse(criada));
     }
+
 
     @GetMapping
     public List<AlocacaoResponseDTO> listar() {

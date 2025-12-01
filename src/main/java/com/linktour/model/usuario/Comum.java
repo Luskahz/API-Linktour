@@ -29,7 +29,6 @@ public class Comum extends Usuario {
     @NotBlank
     private String genero;
 
-    @NotNull
-    private Boolean parceiro;
+    private String parceiro = "";
 
 }

@@ -4,6 +4,8 @@ import com.linktour.dto.usuario.*;
 import com.linktour.dto.usuario.comum.ComumAtualizarDTO;
 import com.linktour.dto.usuario.comum.ComumCreateDTO;
 import com.linktour.dto.usuario.comum.ComumResponseDTO;
+import com.linktour.mapper.AlocacaoMapper;
+import com.linktour.mapper.publicacao.EventoMapper;
 import com.linktour.mapper.usuario.ComumMapper;
 import com.linktour.mapper.usuario.UsuarioMapper;
 import com.linktour.model.usuario.Comum;
@@ -29,6 +31,15 @@ public class UsuarioController {
         Comum comum = usuarioService.cadastrarComum(dto);
         return ComumMapper.toResponse(comum);
     }
+
+    @PutMapping("/{id}/atualizar")
+    public ComumResponseDTO atualizar(
+            @PathVariable Long id,
+            @RequestBody ComumAtualizarDTO dto){
+        Comum comum = usuarioService.atualizarComum(id, dto);
+        return ComumMapper.toResponse(comum);
+    }
+
 
     @PostMapping("/login")
     public Object login(@RequestBody LoginDTO dto) {
@@ -57,8 +68,21 @@ public class UsuarioController {
         return mapUsuarioToDTO(usuario);
     }
 
+    @GetMapping("/{id}/eventos")
+    public List<?> listarEventosDoUsuario(@PathVariable Long id) {
+        return usuarioService.listarEventosDoUsuario(id)
+                .stream()
+                .map(EventoMapper::toResponse)
+                .toList();
+    }
 
-    @PostMapping("/{id}/eventos")
+    @GetMapping("/{id}/alocacoes")
+    public List<?> listarAlocacoesDoUsuario(@PathVariable Long id) {
+        return usuarioService.listarAlocacoesDoUsuario(id)
+                .stream()
+                .map(AlocacaoMapper::toResponse)
+                .toList();
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
@@ -71,8 +95,6 @@ public class UsuarioController {
         if (usuario instanceof Comum comum) {
             return ComumMapper.toResponse(comum);
         }
-
-        // fallback → usuário genérico
         return UsuarioMapper.toResponse(usuario);
     }
 }
