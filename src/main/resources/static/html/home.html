@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>linktour • home</title>
+    <link rel="stylesheet" href="../css/home.css" />
+</head>
+
+<body>
+<header>
+    <div class="title" onclick="goHome()" role="button" tabindex="0">linktour</div>
+
+    <div class="hdr-actions">
+        <div class="hdr-search">
+            <input id="q" type="search" placeholder="Buscar eventos, lugares, cidade..." />
+            <button class="hdr-btn" type="button" onclick="applyFilters()">Buscar</button>
+        </div>
+
+        <button class="avatar-btn" id="hdrAvatarBtn" type="button" onclick="toggleUserMenu()">
+            <img id="hdrAvatarImg" alt="Avatar do usuário" />
+        </button>
+
+        <button class="hdr-btn" id="btnEntrar" type="button" onclick="goEntrar()">Entrar</button>
+    </div>
+</header>
+
+<main>
+    <section class="hero" aria-label="home">
+        <div class="cover"></div>
+        <div class="hero-body">
+            <div class="hero-title">Descubra eventos e lugares</div>
+            <div class="hero-sub">Filtre por cidade, data e ordene do jeito que você quiser.</div>
+
+            <div class="filters" aria-label="filtros">
+                <div class="row">
+                    <label>Cidade</label>
+                    <input id="cidade" type="text" placeholder="Ex: Caraguatatuba" />
+                </div>
+
+                <div class="row">
+                    <label>De</label>
+                    <input id="de" type="date" />
+                </div>
+
+                <div class="row">
+                    <label>Até</label>
+                    <input id="ate" type="date" />
+                </div>
+
+                <div class="row">
+                    <label>Ordenar</label>
+                    <select id="sort">
+                        <option value="recentes">Mais recentes</option>
+                        <option value="proximos">Mais próximos (por data)</option>
+                        <option value="titulo">Título (A-Z)</option>
+                    </select>
+                </div>
+
+                <div class="row row-actions">
+                    <button class="btn primary" type="button" onclick="applyFilters()">Aplicar</button>
+                    <button class="btn" type="button" onclick="clearFilters()">Limpar</button>
+                </div>
+            </div>
+
+            <div class="mini" id="lastUpdate"></div>
+        </div>
+    </section>
+
+    <section class="panel" aria-label="conteúdo">
+        <div class="content">
+            <div class="error" id="pageError"></div>
+            <div class="notice" id="pageNotice"></div>
+
+            <div class="list" id="listaPublicacoes"></div>
+        </div>
+    </section>
+
+</main>
+
+<!-- MENU USUÁRIO -->
+<div class="user-menu-bg" id="userMenuBg">
+    <div class="user-menu" id="userMenu" onclick="event.stopPropagation()">
+        <div class="um-header">
+            <img id="umAvatarImg" class="um-avatar" alt="Avatar do usuário" />
+            <div>
+                <div class="um-name" id="umName">Usuário</div>
+                <div class="um-mini" id="umCity">—</div>
+            </div>
+        </div>
+
+        <div class="um-items">
+            <button class="um-item" type="button" onclick="goPerfil()">Perfil</button>
+            <button class="um-item exit" type="button" onclick="logout()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/home.js"></script>
+</body>
+</html>

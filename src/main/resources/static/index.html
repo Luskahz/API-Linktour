@@ -41,6 +41,8 @@
 
         .status{
           font-size:12px; color:#222; text-align:right; line-height:1.2;
+          max-width: 55%;
+          overflow-wrap:anywhere;
         }
 
         .card{
@@ -77,7 +79,7 @@
           font-size:13px; color:#333;
         }
 
-        /* MODAL: centrado e alinhado com grid */
+        /* MODAL */
         .modal-bg{
           position: fixed; inset: 0;
           background: rgba(0,0,0,0.45);
@@ -133,6 +135,7 @@
           color: var(--black);
           font-size:14px;
           outline:none;
+          font-family: inherit;
         }
 
         input[readonly]{
@@ -192,7 +195,7 @@
 
     <div class="card">
         <div class="list" id="listaUsuarios">Carregando...</div>
-        <p class="hint">Sem sessão/persistência: trocar de usuário exige novo login</p>
+        <p class="hint">Sem sessão/persistência real: trocar de usuário exige novo login (persistência via sessionStorage só entre páginas).</p>
     </div>
 </main>
 
@@ -228,7 +231,7 @@
     </div>
 </div>
 
-<!-- Modal: CADASTRO (ComumCreateDTO NOVO) -->
+<!-- Modal: CADASTRO (ComumCreateDTO) -->
 <div class="modal-bg" id="modalCadastro">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cadTitle" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -268,7 +271,7 @@
 
             <div class="row">
                 <label class="req">Senha</label>
-                <input id="cadSenhaHash" type="password" placeholder="Crie uma senha"/>
+                <input id="cadSenhaHash" type="password" placeholder="Crie uma senha" autocomplete="new-password"/>
                 <div class="mini">Enviado como <b>senhaHash</b> (nome do campo do DTO).</div>
             </div>
 
@@ -320,7 +323,6 @@
     };
 
     let usuarioSelecionado = null;
-    let usuarioLogado = null;
 
     function displayName(u){
       return u?.nomeCompleto || u?.email || ("Usuário #" + (u?.id ?? "?"));
@@ -333,6 +335,7 @@
     function openModal(id){
       document.getElementById(id).style.display = "grid";
     }
+
     function closeModal(id){
       document.getElementById(id).style.display = "none";
       if (id === "modalLogin") hideError("loginError");
@@ -344,6 +347,7 @@
       el.textContent = msg;
       el.style.display = "block";
     }
+
     function hideError(elId){
       const el = document.getElementById(elId);
       el.textContent = "";
@@ -351,12 +355,12 @@
     }
 
     async function compactError(resp){
-      // Se vier JSON do Spring, pega message/error e ignora trace.
       const txt = await resp.text().catch(() => "");
       try{
         const obj = JSON.parse(txt);
         const msg = obj.message || obj.error || ("HTTP " + resp.status);
-        return String(msg).slice(0, 320) + (String(msg).length > 320 ? "\n...(cortado)" : "");
+        const s = String(msg);
+        return s.slice(0, 320) + (s.length > 320 ? "\n...(cortado)" : "");
       }catch{
         return String(txt).slice(0, 320) + (txt.length > 320 ? "\n...(cortado)" : "");
       }
@@ -367,6 +371,24 @@
         if (String(b.dataset.id) === String(id)) b.classList.add("active");
         else b.classList.remove("active");
       });
+    }
+
+    function clearCadastroForm(){
+      hideError("cadError");
+      document.getElementById("cadNomeCompleto").value = "";
+      document.getElementById("cadCpf").value = "";
+      document.getElementById("cadCidade").value = "";
+      document.getElementById("cadEmail").value = "";
+      document.getElementById("cadTelefone").value = "";
+      document.getElementById("cadSenhaHash").value = "";
+      document.getElementById("cadPreferencias").value = "nenhuma";
+      document.getElementById("cadNascimento").value = "";
+      document.getElementById("cadGenero").value = "";
+    }
+
+    function clearLoginForm(){
+      hideError("loginError");
+      document.getElementById("loginSenha").value = "";
     }
 
     async function loadUsers(){
@@ -389,14 +411,13 @@
 
           btn.addEventListener("click", () => {
             usuarioSelecionado = u;
-            hideError("loginError");
 
             document.getElementById("loginTitle").textContent = "Login de " + displayName(u);
             document.getElementById("loginEmail").value = u.email || "";
-            document.getElementById("loginSenha").value = "";
+            clearLoginForm();
 
             openModal("modalLogin");
-            setTimeout(() => document.getElementById("loginSenha").focus(), 40);
+            setTimeout(() => document.getElementById("loginSenha").focus(), 50);
           });
 
           box.appendChild(btn);
@@ -406,19 +427,9 @@
         cad.className = "btn secondary";
         cad.textContent = "+ Cadastrar novo usuário";
         cad.addEventListener("click", () => {
-          hideError("cadError");
-          document.getElementById("cadNomeCompleto").value = "";
-          document.getElementById("cadCpf").value = "";
-          document.getElementById("cadCidade").value = "";
-          document.getElementById("cadEmail").value = "";
-          document.getElementById("cadTelefone").value = "";
-          document.getElementById("cadSenhaHash").value = "";
-          document.getElementById("cadPreferencias").value = "nenhuma";
-          document.getElementById("cadNascimento").value = "";
-          document.getElementById("cadGenero").value = "";
-
+          clearCadastroForm();
           openModal("modalCadastro");
-          setTimeout(() => document.getElementById("cadNomeCompleto").focus(), 40);
+          setTimeout(() => document.getElementById("cadNomeCompleto").focus(), 50);
         });
         box.appendChild(cad);
 
@@ -457,11 +468,22 @@
         }
 
         const data = await resp.json();
-        usuarioLogado = data;
+        const id = data?.id ?? usuarioSelecionado?.id;
 
-        closeModal("modalLogin");
-        setStatus("Logado: " + displayName(data) + " (id: " + (data?.id ?? usuarioSelecionado?.id) + ")");
-        markActive(data?.id ?? usuarioSelecionado?.id);
+        if (!id){
+          showError("loginError", "Login OK, mas não veio id do usuário no retorno.");
+          return;
+        }
+
+        // ✅ persistência simples entre páginas
+        sessionStorage.setItem("linktour_user_id", String(id));
+        sessionStorage.setItem("linktour_user", JSON.stringify(data));
+
+        // ✅ feedback rápido (caso queira ver antes do redirect)
+        setStatus("Logado: " + displayName(data) + " (id: " + id + ")");
+        markActive(id);
+
+        window.location.href = `/html/perfil.html?id=${encodeURIComponent(id)}`;
 
       }catch(e){
         console.error(e);
@@ -472,7 +494,6 @@
     async function doCadastro(){
       hideError("cadError");
 
-      // ComumCreateDTO (NOVO)
       const payload = {
         cpf: document.getElementById("cadCpf").value.trim(),
         nomeCompleto: document.getElementById("cadNomeCompleto").value.trim(),
@@ -485,7 +506,6 @@
         genero: document.getElementById("cadGenero").value
       };
 
-      // validação mínima (espelha NotBlank/NotNull)
       const missing =
         !payload.cpf || !payload.nomeCompleto || !payload.email ||
         !payload.senhaHash || !payload.cidade || !payload.telefone ||
@@ -513,11 +533,9 @@
       }
     }
 
-    // Fecha modais clicando fora
     document.getElementById("modalLogin").addEventListener("click", () => closeModal("modalLogin"));
     document.getElementById("modalCadastro").addEventListener("click", () => closeModal("modalCadastro"));
 
-    // ESC fecha; ENTER confirma modal aberto
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape"){
         closeModal("modalLogin");
@@ -532,8 +550,12 @@
       }
     });
 
-    setStatus("Não logado");
-    loadUsers();
+    (function init(){
+      const id = sessionStorage.getItem("linktour_user_id");
+      if (id) setStatus("Último logado: id " + id);
+      else setStatus("Não logado");
+      loadUsers();
+    })();
 </script>
 </body>
 </html>
