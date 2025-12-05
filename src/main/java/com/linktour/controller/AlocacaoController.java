@@ -3,8 +3,6 @@ package com.linktour.controller;
 import com.linktour.dto.alocacao.AlocacaoAtualizarDTO;
 import com.linktour.dto.alocacao.AlocacaoCreateDTO;
 import com.linktour.dto.alocacao.AlocacaoResponseDTO;
-import com.linktour.dto.usuario.comum.ComumAtualizarDTO;
-import com.linktour.dto.usuario.comum.ComumResponseDTO;
 import com.linktour.mapper.AlocacaoMapper;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.service.AlocacaoService;

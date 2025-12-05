@@ -4,8 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record AlocacaoCreateDTO(
-        @NotNull Double latitude,
-        @NotNull Double longitude,
+        @NotBlank String endereco,
         @NotBlank String nome,
         @NotBlank String descricao,
         @NotNull Integer lotacao,

@@ -308,8 +308,6 @@ function openAddModal() {
   document.getElementById("aNome").value = "";
   document.getElementById("aDescricao").value = "";
   document.getElementById("aLotacao").value = "";
-  document.getElementById("aLat").value = "";
-  document.getElementById("aLng").value = "";
   document.getElementById("aDoc").value = "";
   document.getElementById("aFachada").value = "";
   hideError("alocError");
@@ -439,26 +437,22 @@ async function criarAlocacao() {
   hideError("alocError");
   hideNotice();
 
-  const latRaw = document.getElementById("aLat").value;
-  const lngRaw = document.getElementById("aLng").value;
-  const lotRaw = document.getElementById("aLotacao").value;
-
   const payload = {
     idUsuario: Number(userId),
-    latitude: Number(latRaw),
-    longitude: Number(lngRaw),
     nome: document.getElementById("aNome").value.trim(),
     descricao: document.getElementById("aDescricao").value.trim(),
-    lotacao: Number(lotRaw),
+    endereco: document.getElementById("aEndereco").value.trim(),
+    lotacao: Number(document.getElementById("aLotacao").value),
     url_documentacao: document.getElementById("aDoc").value.trim() || null,
     url_fachada: document.getElementById("aFachada").value.trim() || null,
   };
 
   const missing =
-    !Number.isFinite(payload.idUsuario) || payload.idUsuario <= 0 ||
-    latRaw === "" || lngRaw === "" || lotRaw === "" ||
-    !Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude) || !Number.isFinite(payload.lotacao) ||
-    !payload.nome || !payload.descricao;
+    !payload.idUsuario ||
+    !payload.nome ||
+    !payload.descricao ||
+    !payload.endereco ||
+    !Number.isFinite(payload.lotacao);
 
   if (missing) {
     showError("alocError", "Preencha os campos obrigatórios (*).");

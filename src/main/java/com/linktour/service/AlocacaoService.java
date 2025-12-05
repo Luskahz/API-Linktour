@@ -2,6 +2,7 @@ package com.linktour.service;
 
 import com.linktour.dto.alocacao.AlocacaoAtualizarDTO;
 import com.linktour.dto.alocacao.AlocacaoCreateDTO;
+import com.linktour.exception.RecursoNaoEncontradoException;
 import com.linktour.mapper.AlocacaoMapper;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.model.usuario.Usuario;
@@ -16,21 +17,29 @@ public class AlocacaoService {
 
     private final AlocacaoRepository alocacaoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final GeolocalizacaoService geolocalizacaoService;
 
     public AlocacaoService(
             AlocacaoRepository alocacaoRepository,
+            GeolocalizacaoService geo,
             UsuarioRepository usuarioRepository
     ) {
         this.alocacaoRepository = alocacaoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.geolocalizacaoService = geo;
     }
 
     public Alocacao criar(AlocacaoCreateDTO dto) {
         Usuario usuario = usuarioRepository.findById(dto.idUsuario())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
-        Alocacao alocacao = AlocacaoMapper.toEntity(dto, usuario);
-        return alocacaoRepository.save(alocacao);
+        Double[] latLong = geolocalizacaoService.gerarLatLong(dto.endereco());
+
+        Alocacao a = AlocacaoMapper.toEntity(dto, usuario);
+        a.setLatitude(latLong[0]);
+        a.setLongitude(latLong[1]);
+
+        return alocacaoRepository.save(a);
     }
 
     public List<Alocacao> listar() {
@@ -39,12 +48,12 @@ public class AlocacaoService {
 
     public Alocacao buscar(Long id) {
         return alocacaoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Alocação não encontrada"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Alocação não encontrada"));
     }
 
     public void deletar(Long id) {
         if (!alocacaoRepository.existsById(id)) {
-            throw new RuntimeException("Alocação não encontrada");
+            throw new RecursoNaoEncontradoException("Alocação não encontrada");
         }
         alocacaoRepository.deleteById(id);
     }
@@ -67,3 +76,5 @@ public class AlocacaoService {
         return alocacaoRepository.findByUsuarioId(usuarioId);
     }
 }
+
+

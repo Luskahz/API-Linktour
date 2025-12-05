@@ -3,7 +3,11 @@ package com.linktour.service;
 import com.linktour.dto.usuario.comum.ComumAtualizarDTO;
 import com.linktour.dto.usuario.comum.ComumCreateDTO;
 import com.linktour.dto.usuario.LoginDTO;
+import com.linktour.exception.CPFDuplicadoException;
+import com.linktour.exception.CPFInvalidoException;
+import com.linktour.exception.EmailJaCadastradoException;
 import com.linktour.exception.RecursoNaoEncontradoException;
+import com.linktour.exception.SenhaIncorretaException;
 import com.linktour.mapper.usuario.ComumMapper;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.model.publicacao.Evento;
@@ -40,11 +44,15 @@ public class UsuarioService {
     }
 
     public Comum cadastrarComum(ComumCreateDTO dto) {
-
         usuarioRepository.findByEmail(dto.email())
-                .ifPresent(u -> {
-                    throw new RuntimeException("Email já cadastrado.");
-                });
+                .ifPresent(u -> { throw new EmailJaCadastradoException(dto.email()); });
+
+        if (!validaCPF(dto.cpf())) {
+            throw new CPFInvalidoException(dto.cpf());
+        }
+
+        usuarioRepository.findByCpf(dto.cpf())
+                .ifPresent(u -> { throw new CPFDuplicadoException(dto.cpf()); });
 
         String hash = BCrypt.hashpw(dto.senhaHash(), BCrypt.gensalt());
 
@@ -58,12 +66,11 @@ public class UsuarioService {
     }
 
     public Usuario login(LoginDTO dto) {
-
         Usuario usuario = usuarioRepository.findByEmail(dto.email())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Email não encontrado"));
 
         if (!BCrypt.checkpw(dto.senha(), usuario.getSenhaHash())) {
-            throw new RuntimeException("Senha incorreta.");
+            throw new SenhaIncorretaException();
         }
 
         return usuario;
@@ -100,13 +107,12 @@ public class UsuarioService {
         comumRepository.save(comum);
     }
 
-    public Comum atualizarComum(Long id, ComumAtualizarDTO dto){
-
+    public Comum atualizarComum(Long id, ComumAtualizarDTO dto) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
         if (!(usuario instanceof Comum comum)) {
-            throw new RuntimeException("Este usuário não é do tipo Comum.");
+            throw new IllegalArgumentException("Este usuário não é do tipo Comum.");
         }
 
         if (dto.nomeCompleto() != null && !dto.nomeCompleto().isBlank())
@@ -119,20 +125,25 @@ public class UsuarioService {
             comum.setTelefone(dto.telefone());
 
         if (dto.email() != null && !dto.email().isBlank()) {
-
-            // aqui eu garanto que o email se mantem unico
             usuarioRepository.findByEmail(dto.email())
                     .ifPresent(u -> {
-                        if (!u.getId().equals(id)) {
-                            throw new RuntimeException("Email já está em uso.");
-                        }
+                        if (!u.getId().equals(id)) throw new EmailJaCadastradoException(dto.email());
                     });
-
             comum.setEmail(dto.email());
         }
 
-        if (dto.cpf() != null && !dto.cpf().isBlank())
+        if (dto.cpf() != null && !dto.cpf().isBlank()) {
+            if (!validaCPF(dto.cpf())) {
+                throw new CPFInvalidoException(dto.cpf());
+            }
+
+            usuarioRepository.findByCpf(dto.cpf())
+                    .ifPresent(u -> {
+                        if (!u.getId().equals(id)) throw new CPFDuplicadoException(dto.cpf());
+                    });
+
             comum.setCpf(dto.cpf());
+        }
 
         if (dto.preferencias() != null)
             comum.setPreferencias(dto.preferencias());
@@ -146,12 +157,28 @@ public class UsuarioService {
         return comumRepository.save(comum);
     }
 
-
-
     public void deletar(Long id) {
         if (!usuarioRepository.existsById(id)) {
             throw new RecursoNaoEncontradoException("Usuário não encontrado");
         }
         usuarioRepository.deleteById(id);
+    }
+
+    private boolean validaCPF(String cpf) {
+        String c = cpf.replaceAll("\\D", "");
+        if (c.length() != 11 || c.chars().distinct().count() == 1) return false;
+
+        int soma = 0, peso = 10;
+        for (int i = 0; i < 9; i++) soma += (c.charAt(i) - '0') * peso--;
+        int dig1 = 11 - (soma % 11);
+        dig1 = dig1 > 9 ? 0 : dig1;
+
+        soma = 0;
+        peso = 11;
+        for (int i = 0; i < 10; i++) soma += (c.charAt(i) - '0') * peso--;
+        int dig2 = 11 - (soma % 11);
+        dig2 = dig2 > 9 ? 0 : dig2;
+
+        return dig1 == (c.charAt(9) - '0') && dig2 == (c.charAt(10) - '0');
     }
 }

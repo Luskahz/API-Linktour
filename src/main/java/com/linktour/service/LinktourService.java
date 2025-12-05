@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class LinktourService {
+
     private final UsuarioRepository usuarioRepository;
     private final LinktourRepository linktourRepository;
 
@@ -22,25 +23,20 @@ public class LinktourService {
         this.linktourRepository = linktourRepository;
     }
 
-
-
     public Linktour promover(LinktourPromoverDTO dto) {
-
         Usuario usuario = usuarioRepository.findById(dto.idUsuario())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
-
         Linktour linktour = LinktourMapper.toEntity(dto, usuario);
-
         return linktourRepository.save(linktour);
     }
-    public void revogar(Long idUsuario) {
 
-        // Buscar registro de Linktour pelo id do usuário
+    public void revogar(Long idUsuario) {
         Linktour link = linktourRepository.findByUsuarioId(idUsuario)
                 .orElseThrow(() ->
                         new RecursoNaoEncontradoException("Este usuário não possui permissão Linktour.")
                 );
+
         linktourRepository.deleteById(link.getRegistro());
     }
 }

@@ -4,15 +4,13 @@ import com.linktour.dto.alocacao.AlocacaoCreateDTO;
 import com.linktour.dto.alocacao.AlocacaoResponseDTO;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.model.usuario.Usuario;
+import com.linktour.service.GeolocalizacaoService;
 
 public class AlocacaoMapper {
 
     public static Alocacao toEntity(AlocacaoCreateDTO dto, Usuario usuario) {
         Alocacao a = new Alocacao();
-
-        a.setUsuario(usuario);   // ✔ associa o dono da alocação
-        a.setLatitude(dto.latitude());
-        a.setLongitude(dto.longitude());
+        a.setUsuario(usuario);
         a.setNome(dto.nome());
         a.setDescricao(dto.descricao());
         a.setLotacao(dto.lotacao());

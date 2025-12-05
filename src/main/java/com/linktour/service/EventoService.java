@@ -2,6 +2,7 @@ package com.linktour.service;
 
 import com.linktour.dto.publicacao.evento.EventoCreateDTO;
 import com.linktour.exception.RecursoNaoEncontradoException;
+import com.linktour.exception.TamanhoAlocacaoInsuficienteException;
 import com.linktour.mapper.publicacao.EventoMapper;
 import com.linktour.model.publicacao.Evento;
 import com.linktour.model.alocacao.Alocacao;
@@ -34,10 +35,21 @@ public class EventoService {
                 .orElseThrow(() ->
                         new RecursoNaoEncontradoException("O usuário vinculado não existe.")
                 );
+
         Alocacao alocacao = alocacaoRepository.findById(dto.idAlocacao())
                 .orElseThrow(() ->
                         new RecursoNaoEncontradoException("A alocação vinculada não existe.")
                 );
+
+        Integer capacidadeEvento = dto.capacidade();
+        Integer capacidadeAlocacao = alocacao.getLotacao();
+
+        if (capacidadeEvento != null && capacidadeEvento > capacidadeAlocacao) {
+            throw new TamanhoAlocacaoInsuficienteException(
+                    alocacao.getId()
+            );
+        }
+
         Evento evento = EventoMapper.toEntity(dto, usuario, alocacao);
 
         return eventoRepository.save(evento);

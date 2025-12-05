@@ -3,9 +3,12 @@ package com.linktour.controller;
 import com.linktour.dto.participacao.participacaoEvento.ParticipacaoEventoCreateDTO;
 import com.linktour.dto.participacao.participacaoEvento.ParticipacaoEventoAtualizarDTO;
 import com.linktour.dto.participacao.participacaoEvento.ParticipacaoEventoResponseDTO;
+import com.linktour.mapper.participacao.ParticipacaoEventoMapper;
 import com.linktour.service.ParticipacaoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/participacoes")
@@ -24,6 +27,15 @@ public class ParticipacaoController {
     ) {
         return participacaoService.participar(eventoId, dto);
     }
+
+    @GetMapping("/eventos")
+    public List<ParticipacaoEventoResponseDTO> listar(){
+        return participacaoService.listar()
+                .stream()
+                .map(ParticipacaoEventoMapper::toResponse)
+                .toList();
+    }
+
 
     @DeleteMapping("/eventos/{eventoId}")
     public ResponseEntity<Void> cancelar(
