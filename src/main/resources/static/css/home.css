@@ -243,6 +243,10 @@ input, select{
   padding: 3px 8px;
   background: var(--white);
 }
+.kv span.pill-strong {
+  background: var(--black);
+  color: var(--white);
+}
 
 .pill-strong{
   background: var(--black);

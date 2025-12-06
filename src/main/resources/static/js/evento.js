@@ -601,6 +601,11 @@ async function participar() {
     }
 
     participacao = await resp.json().catch(() => ({ status: "PENDENTE" }));
+
+
+    await fetchDisponibilidade();
+    renderEvento();
+
     showNotice("Participação registrada!");
     applyParticipacaoButtonState();
     renderBadge();
@@ -611,6 +616,7 @@ async function participar() {
     applyParticipacaoButtonState();
   }
 }
+
 
 async function cancelarParticipacao() {
   hideError("pageError");
@@ -645,6 +651,10 @@ async function cancelarParticipacao() {
     }
 
     participacao = null;
+
+    await fetchDisponibilidade();
+    renderEvento();
+
     showNotice("Participação cancelada.");
     applyParticipacaoButtonState();
     renderBadge();
