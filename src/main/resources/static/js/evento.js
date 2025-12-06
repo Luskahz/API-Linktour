@@ -1,6 +1,7 @@
-// ===== API =====
+// evento.js
 const API = {
   evento: (id) => fetch(`/publicacoes/${id}`),
+  disponibilidade: (eventoId) => fetch(`/publicacoes/eventos/${eventoId}/disponibilidade`),
   alocacao: (id) => fetch(`/alocacoes/${id}`),
   usuario: (id) => fetch(`/usuarios/${id}`),
 
@@ -20,7 +21,15 @@ const API = {
     }),
 };
 
-// ===== Auth helpers =====
+/* Navegação */
+function goHome() { location.href = "/html/home.html"; }
+function goEntrar() { location.href = "/index.html"; }
+function goPerfil() {
+  if (!userId) return goEntrar();
+  location.href = `./perfil.html?id=${encodeURIComponent(userId)}`;
+}
+
+/* Sessão */
 function redirectToLogin() {
   sessionStorage.removeItem("linktour_user_id");
   location.replace("/index.html");
@@ -36,11 +45,11 @@ function isAuthOnly(resp) {
   return resp && (resp.status === 401 || resp.status === 403);
 }
 
-// ===== Utils =====
 function qs(k) {
   return new URLSearchParams(location.search).get(k);
 }
 
+/* UI */
 function showError(id, msg) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -69,18 +78,24 @@ function hideNotice() {
   el.style.display = "none";
 }
 
-async function compactError(resp) {
+async function readApiError(resp) {
   const txt = await resp.text().catch(() => "");
+  if (!txt) return `HTTP ${resp.status}`;
   try {
     const obj = JSON.parse(txt);
-    const msg = obj.message || obj.error || ("HTTP " + resp.status);
-    const s = String(msg);
-    return s.slice(0, 320) + (s.length > 320 ? "\n...(cortado)" : "");
+    const msg = obj.mensagem || obj.message || obj.error || obj.details || obj.title;
+    return (msg ? String(msg) : `HTTP ${resp.status}`).slice(0, 600);
   } catch {
-    return String(txt).slice(0, 320) + (txt.length > 320 ? "\n...(cortado)" : "");
+    return String(txt).slice(0, 600);
   }
 }
 
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+/* Datas */
 function fmtDateTime(dt) {
   if (!dt) return "—";
   try {
@@ -95,12 +110,10 @@ function fmtDateTime(dt) {
   }
 }
 
-// ===== Polimorfismo (type guard) =====
 function isEvento(p) {
   return p && (p.dataInicio != null || p.dataFim != null || p.capacidade != null || p.idAlocacao != null);
 }
 
-// ===== Datas (LocalDateTime do Java -> Date local) =====
 function parseLocalDateTime(dt) {
   if (!dt) return null;
   const s = String(dt).replace("Z", "").split(".")[0];
@@ -134,13 +147,13 @@ function canCancel(ev) {
   return (start - new Date()) > 0;
 }
 
+/* Contagem */
 function isParticipando(part) {
   if (!part) return false;
   const st = String(part.status || "").trim().toUpperCase();
   return st !== "CANCELADO" && st !== "CANCELADA" && st !== "INATIVO";
 }
 
-// ===== Countdown (calendário) =====
 function daysInMonth(year, monthIndex0) {
   return new Date(year, monthIndex0 + 1, 0).getDate();
 }
@@ -228,15 +241,7 @@ function formatCountdownPT(from, to) {
   return parts.join(" ");
 }
 
-// ===== Nav =====
-function goHome() { location.href = "/html/home.html"; }
-function goEntrar() { location.href = "/index.html"; }
-function goPerfil() {
-  if (!userId) return goEntrar();
-  location.href = `./perfil.html?id=${encodeURIComponent(userId)}`;
-}
-
-// ===== Menu =====
+/* Menu */
 function toggleUserMenu(force) {
   const bg = document.getElementById("userMenuBg");
   if (!bg) return;
@@ -253,7 +258,6 @@ function logout() {
   location.href = "/index.html";
 }
 
-// ===== Avatar =====
 function escapeXml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;"
@@ -281,9 +285,9 @@ function applyHeaderAndMenuAvatar() {
   const umCity = document.getElementById("umCity");
   const btnEntrar = document.getElementById("btnEntrar");
 
-  if (!userId) {
-    if (hdrBtn) hdrBtn.style.display = "none";
-    if (btnEntrar) btnEntrar.style.display = "inline-flex";
+  if (!userId || !me) {
+    if (hdrBtn) hdrBtn.style.display = userId ? "inline-flex" : "none";
+    if (btnEntrar) btnEntrar.style.display = userId ? "none" : "inline-flex";
     return;
   }
 
@@ -293,7 +297,7 @@ function applyHeaderAndMenuAvatar() {
   const nome = (me?.nomeCompleto || "Usuário").trim() || "Usuário";
   const cidade = (me?.cidade || "—").trim() || "—";
   const initial = nome.charAt(0).toUpperCase();
-  const foto = (me?.fotoBase64 || "").trim(); // se existir no seu backend
+  const foto = (me?.fotoBase64 || "").trim();
   const src = foto ? ("data:image/png;base64," + foto) : svgAvatarDataUri(initial);
 
   if (hdrImg) hdrImg.src = src;
@@ -302,55 +306,57 @@ function applyHeaderAndMenuAvatar() {
   if (umCity) umCity.textContent = cidade;
 }
 
-// ===== State =====
-let userId = null;        // id do usuário logado (opcional aqui)
-let me = null;            // dto do usuário logado
+/* Estado */
+let userId = null;
+let me = null;
 let eventoId = null;
 
-let evento = null;        // EventoResponseDTO
-let autor = null;         // ComumResponseDTO (ou outro UsuarioResponseDTO)
-let alocacao = null;      // AlocacaoResponseDTO
-let participacao = null;  // ParticipacaoEventoResponseDTO | null
+let evento = null;
+let autor = null;
+let alocacao = null;
+let participacao = null;
+let disponibilidade = null;
 
 let countdownInterval = null;
 
-// ===== Fetch =====
+/* Fetch */
 async function fetchMeIfLogged() {
   if (!userId) return;
+
   const resp = await API.usuario(userId);
   if (isAuthOnly(resp)) return redirectToLogin();
-  if (!resp.ok) return; // não força redirect aqui, só não mostra avatar
+
+  if (resp.status === 404) {
+    sessionStorage.removeItem("linktour_user_id");
+    userId = null;
+    me = null;
+    return;
+  }
+
+  if (!resp.ok) return;
   me = await resp.json().catch(() => null);
 }
 
 async function fetchEvento() {
   const resp = await API.evento(eventoId);
-  if (isAuthOnly(resp)) return redirectToLogin();
+  if (!resp.ok) throw new Error(await readApiError(resp));
 
-  if (!resp.ok) {
-    const msg = await compactError(resp);
-    throw new Error("Falha ao buscar evento.\n" + msg);
-  }
-
-  const obj = await resp.json();
-  if (!isEvento(obj)) {
-    throw new Error("O recurso retornado não parece ser um Evento (DTO inesperado).");
-  }
+  const obj = await resp.json().catch(() => null);
+  if (!isEvento(obj)) throw new Error("Recurso retornado não parece ser um evento.");
   evento = obj;
 }
 
 async function fetchAutorEAlocacao() {
-  // autor
+  autor = null;
+  alocacao = null;
+
   if (evento?.idUsuario != null) {
     const rU = await API.usuario(evento.idUsuario);
-    if (isAuthOnly(rU)) return redirectToLogin();
     if (rU.ok) autor = await rU.json().catch(() => null);
   }
 
-  // alocação
   if (evento?.idAlocacao != null) {
     const rA = await API.alocacao(evento.idAlocacao);
-    if (isAuthOnly(rA)) return redirectToLogin();
     if (rA.ok) alocacao = await rA.json().catch(() => null);
   }
 }
@@ -359,7 +365,6 @@ async function fetchParticipacaoIfLogged() {
   if (!userId) { participacao = null; return; }
 
   const resp = await API.buscarParticipacaoEvento(eventoId, userId);
-
   if (isAuthOnly(resp)) return redirectToLogin();
 
   if (resp.status === 404) { participacao = null; return; }
@@ -368,12 +373,48 @@ async function fetchParticipacaoIfLogged() {
   participacao = await resp.json().catch(() => null);
 }
 
-// ===== UI render =====
-function setText(id, text) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = text;
+async function fetchDisponibilidade() {
+  disponibilidade = null;
+
+  const resp = await API.disponibilidade(eventoId);
+  if (isAuthOnly(resp)) return redirectToLogin();
+
+  if (resp.status === 404) { disponibilidade = null; return; }
+  if (!resp.ok) { disponibilidade = null; return; }
+
+  const ct = (resp.headers.get("content-type") || "").toLowerCase();
+
+  if (ct.includes("application/json")) {
+    const data = await resp.json().catch(() => null);
+
+    if (typeof data === "number") {
+      disponibilidade = data;
+      return;
+    }
+
+    const n =
+      data?.vagas ??
+      data?.disponibilidade ??
+      data?.value ??
+      data?.total ??
+      data?.free ??
+      data?.available;
+
+    if (typeof n === "number") {
+      disponibilidade = n;
+      return;
+    }
+
+    const s = String(n ?? "").trim();
+    disponibilidade = /^\d+$/.test(s) ? Number(s) : null;
+    return;
+  }
+
+  const txt = (await resp.text().catch(() => "")).trim();
+  disponibilidade = /^\d+$/.test(txt) ? Number(txt) : null;
 }
 
+/* Render */
 function renderAutor() {
   const nome = (autor?.nomeCompleto || "Usuário").trim() || "Usuário";
   const cidade = (autor?.cidade || "—").trim() || "—";
@@ -381,7 +422,6 @@ function renderAutor() {
   setText("autorNome", nome);
   setText("autorCidade", cidade);
 
-  // contato (evita mostrar senhaHash, etc.)
   const email = (autor?.email || "").trim();
   const tel = (autor?.telefone || "").trim();
   const contato = [email, tel].filter(Boolean).join(" • ");
@@ -389,6 +429,12 @@ function renderAutor() {
 
   const av = document.getElementById("autorAvatar");
   if (av) av.textContent = nome.charAt(0).toUpperCase() || "?";
+
+  const link = document.getElementById("autorLink");
+  if (link) {
+    const id = evento?.idUsuario ?? autor?.id ?? "";
+    link.href = `./usuario.html?id=${encodeURIComponent(String(id))}`;
+  }
 }
 
 function renderAlocacao() {
@@ -446,21 +492,24 @@ function renderAlocacao() {
 function renderEvento() {
   setText("eventTitle", evento?.titulo ?? ("Evento #" + (evento?.id ?? "?")));
   setText("eventDesc", (evento?.descricao || "").trim() || "Sem descrição.");
-
   setText("eventCreated", "Criado: " + fmtDateTime(evento?.dataCriacao));
 
   const kv = document.getElementById("eventKv");
   if (kv) {
     kv.innerHTML = "";
+
     const parts = [
+      ["Vagas", disponibilidade != null ? String(disponibilidade) : "—"],
       ["Capacidade", evento?.capacidade != null ? String(evento.capacidade) : "—"],
       ["Início", fmtDateTime(evento?.dataInicio)],
       ["Fim", fmtDateTime(evento?.dataFim)],
       ["Alocação", evento?.idAlocacao != null ? ("#" + evento.idAlocacao) : "—"],
     ];
+
     for (const [k, v] of parts) {
       const span = document.createElement("span");
       span.textContent = `${k}: ${v}`;
+      if (k === "Vagas" && disponibilidade != null) span.classList.add("pill-strong");
       kv.appendChild(span);
     }
   }
@@ -468,12 +517,31 @@ function renderEvento() {
   const btnMapa = document.getElementById("btnMapa");
   if (btnMapa) {
     btnMapa.onclick = () => {
-      location.href = `./mapa.html?eventoId=${encodeURIComponent(eventoId)}`;
+      if (!evento?.idAlocacao) return showNotice("Evento sem alocação vinculada.");
+      toggleMapFocus();
     };
   }
 }
 
-// ===== Participação (page) =====
+function renderBadge() {
+  const b = document.getElementById("eventBadge");
+  if (!b) return;
+
+  const { phase, start, end } = getEventPhase(evento);
+
+  let txt = "Evento";
+  if (phase === "ended") txt = "Encerrado";
+  if (phase === "running") txt = "Em andamento";
+  if (phase === "upcoming") txt = "Em breve";
+
+  if (userId) txt += isParticipando(participacao) ? " • Participando" : " • Não participante";
+  if (!start) txt += " • Sem data início";
+  if (!end) txt += " • Sem data fim";
+
+  b.textContent = txt;
+}
+
+/* Participação */
 function applyParticipacaoButtonState() {
   const btn = document.getElementById("btnParticipacao");
   if (!btn) return;
@@ -511,13 +579,13 @@ async function participar() {
   if (!userId) return goEntrar();
 
   if (!canJoin(evento)) {
-    showNotice("Inscrições encerradas (faltam menos de 10 minutos).");
+    showNotice("Inscrições encerradas para este evento.");
     applyParticipacaoButtonState();
     return;
   }
 
   const btn = document.getElementById("btnParticipacao");
-  const payload = { usuarioId: Number(userId), eventoId: Number(eventoId) };
+  const payload = { usuarioId: Number(userId) };
 
   try {
     if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
@@ -526,16 +594,17 @@ async function participar() {
     if (isAuthOnly(resp)) return redirectToLogin();
 
     if (!resp.ok) {
-      const msg = await compactError(resp);
-      showError("pageError", "Falha ao participar.\n" + msg);
+      showError("pageError", await readApiError(resp));
+      await fetchParticipacaoIfLogged();
       if (btn) btn.disabled = false;
       applyParticipacaoButtonState();
       return;
     }
 
-    participacao = await resp.json().catch(() => ({ status: "ATIVO" }));
+    participacao = await resp.json().catch(() => ({ status: "PENDENTE" }));
     showNotice("Participação registrada!");
     applyParticipacaoButtonState();
+    renderBadge();
   } catch (e) {
     console.error(e);
     showError("pageError", "Erro de rede/servidor ao participar.");
@@ -570,8 +639,7 @@ async function cancelarParticipacao() {
     if (isAuthOnly(resp)) return redirectToLogin();
 
     if (!resp.ok) {
-      const msg = await compactError(resp);
-      showError("pageError", "Falha ao cancelar.\n" + msg);
+      showError("pageError", await readApiError(resp));
       if (btn) btn.disabled = false;
       applyParticipacaoButtonState();
       return;
@@ -580,6 +648,7 @@ async function cancelarParticipacao() {
     participacao = null;
     showNotice("Participação cancelada.");
     applyParticipacaoButtonState();
+    renderBadge();
   } catch (e) {
     console.error(e);
     showError("pageError", "Erro de rede/servidor ao cancelar participação.");
@@ -588,31 +657,7 @@ async function cancelarParticipacao() {
   }
 }
 
-// ===== Badge + Countdown =====
-function renderBadge() {
-  const b = document.getElementById("eventBadge");
-  if (!b) return;
-
-  const { phase, start, end } = getEventPhase(evento);
-
-  let txt = "Evento";
-  if (phase === "ended") txt = "Encerrado";
-  if (phase === "running") txt = "Em andamento";
-  if (phase === "upcoming") txt = "Em breve";
-
-  // participação
-  if (userId) {
-    if (isParticipando(participacao)) txt += " • Participando";
-    else txt += " • Não participante";
-  }
-
-  // sanity check
-  if (!start) txt += " • Sem data início";
-  if (!end) txt += " • Sem data fim";
-
-  b.textContent = txt;
-}
-
+/* Countdown */
 function startCountdown() {
   const el = document.getElementById("eventCountdown");
   if (!el) return;
@@ -631,18 +676,12 @@ function startCountdown() {
     const diff = start - now;
     const pretty = formatCountdownPT(now, start);
 
-    if (phase === "ended") {
-      el.textContent = "Evento encerrado.";
-    } else if (phase === "running") {
-      el.textContent = "Evento em andamento.";
-    } else {
-      if (diff >= 10 * 60 * 1000) {
-        el.textContent = `⏳ Começa em ${pretty}.`;
-      } else if (diff > 0) {
-        el.textContent = `⏳ Começa em ${pretty} • inscrições encerradas (faltam < 10 min).`;
-      } else {
-        el.textContent = "Evento em andamento.";
-      }
+    if (phase === "ended") el.textContent = "Evento encerrado.";
+    else if (phase === "running") el.textContent = "Evento em andamento.";
+    else {
+      if (diff >= 10 * 60 * 1000) el.textContent = `Começa em ${pretty}.`;
+      else if (diff > 0) el.textContent = `Começa em ${pretty} • inscrições encerradas (faltam < 10 min).`;
+      else el.textContent = "Evento em andamento.";
     }
 
     applyParticipacaoButtonState();
@@ -653,7 +692,7 @@ function startCountdown() {
   countdownInterval = setInterval(tick, 1000);
 }
 
-// ===== Mapa (Leaflet) =====
+/* Mapa */
 let map = null;
 let marker = null;
 
@@ -675,10 +714,7 @@ function renderMap() {
   if (hint) hint.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
   if (!map) {
-    map = L.map("map", {
-      zoomControl: true,
-      attributionControl: true,
-    }).setView([lat, lng], 15);
+    map = L.map("map", { zoomControl: true, attributionControl: true }).setView([lat, lng], 15);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -694,11 +730,18 @@ function renderMap() {
   const label = (alocacao?.nome || evento?.titulo || "Local do evento").trim();
   marker.bindPopup(label).openPopup();
 
-  // Leaflet precisa recalcular tamanho quando container usa aspect-ratio
   setTimeout(() => map.invalidateSize(), 50);
 }
 
-// ===== Start =====
+function toggleMapFocus() {
+  const mapBox = document.getElementById("map");
+  if (!mapBox) return;
+
+  mapBox.scrollIntoView({ behavior: "smooth", block: "center" });
+  setTimeout(() => map?.invalidateSize?.(), 120);
+}
+
+/* Init */
 (function init() {
   hideError("pageError");
   hideNotice();
@@ -712,7 +755,6 @@ function renderMap() {
 
   userId = readUserIdOptional();
 
-  // fechar menu clicando fora
   const bg = document.getElementById("userMenuBg");
   if (bg) bg.addEventListener("click", () => toggleUserMenu(false));
 
@@ -722,8 +764,11 @@ function renderMap() {
       applyHeaderAndMenuAvatar();
 
       await fetchEvento();
-      await fetchAutorEAlocacao();
-      await fetchParticipacaoIfLogged();
+      await Promise.all([
+        fetchAutorEAlocacao(),
+        fetchParticipacaoIfLogged(),
+        fetchDisponibilidade(),
+      ]);
 
       renderEvento();
       renderAutor();

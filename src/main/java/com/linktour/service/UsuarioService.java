@@ -51,7 +51,7 @@ public class UsuarioService {
             throw new CPFInvalidoException(dto.cpf());
         }
 
-        usuarioRepository.findByCpf(dto.cpf())
+        comumRepository.findByCpf(dto.cpf())
                 .ifPresent(u -> { throw new CPFDuplicadoException(dto.cpf()); });
 
         String hash = BCrypt.hashpw(dto.senhaHash(), BCrypt.gensalt());
@@ -137,7 +137,7 @@ public class UsuarioService {
                 throw new CPFInvalidoException(dto.cpf());
             }
 
-            usuarioRepository.findByCpf(dto.cpf())
+            comumRepository.findByCpf(dto.cpf())
                     .ifPresent(u -> {
                         if (!u.getId().equals(id)) throw new CPFDuplicadoException(dto.cpf());
                     });

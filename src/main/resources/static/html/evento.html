@@ -6,12 +6,7 @@
     <title>linktour • evento</title>
 
     <link rel="stylesheet" href="../css/evento.css" />
-
-    <!-- Leaflet (OpenStreetMap) -->
-    <link
-            rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 
 <body>
@@ -36,7 +31,6 @@
             <div class="notice" id="pageNotice"></div>
 
             <div class="layout">
-                <!-- COLUNA PRINCIPAL -->
                 <section class="maincol" aria-label="detalhes do evento">
                     <div class="card">
                         <div class="topline">
@@ -60,14 +54,15 @@
                     <div class="grid2">
                         <div class="card">
                             <div class="box-title">Organizador</div>
-                            <div class="person" id="autorBox">
+
+                            <a class="person person-link" id="autorLink" href="./usuario.html?id=">
                                 <div class="avatar" id="autorAvatar">?</div>
                                 <div class="person-meta">
                                     <div class="person-name" id="autorNome">—</div>
                                     <div class="mini" id="autorCidade">—</div>
                                     <div class="mini" id="autorContato">—</div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
 
                         <div class="card">
@@ -83,7 +78,6 @@
                     </div>
                 </section>
 
-                <!-- SIDEBAR -->
                 <aside class="sidebar" aria-label="mapa">
                     <div class="card">
                         <div class="box-title">Localização</div>
@@ -96,7 +90,6 @@
     </section>
 </main>
 
-<!-- MENU USUÁRIO -->
 <div class="user-menu-bg" id="userMenuBg">
     <div class="user-menu" id="userMenu" onclick="event.stopPropagation()">
         <div class="um-header">

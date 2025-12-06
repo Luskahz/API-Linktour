@@ -54,7 +54,7 @@ header .hdr-actions{
   background: transparent;
   padding: 0;
   cursor: pointer;
-  display:none; /* só quando logado */
+  display:none;
 }
 .avatar-btn img{
   width: 36px;
@@ -159,6 +159,10 @@ main{
   padding: 3px 8px;
   background: var(--white);
 }
+.kv .pill-strong{
+  background: var(--black);
+  color: var(--white);
+}
 
 .actions{
   display:flex;
@@ -206,6 +210,22 @@ main{
   gap: 10px;
   align-items:center;
 }
+.person-meta{ min-width: 0; }
+.person-name{ font-weight: 900; font-size: 14px; }
+
+.person-link{
+  text-decoration:none;
+  color:inherit;
+  border-radius: var(--rb);
+  padding: 8px;
+  margin: -8px;
+}
+.person-link:hover{ background: var(--g1); }
+.person-link:focus{
+  outline: 2px solid var(--black);
+  outline-offset: 2px;
+}
+
 .avatar{
   width: 44px;
   height: 44px;
@@ -216,9 +236,8 @@ main{
   justify-content:center;
   font-weight: 900;
   background: var(--white);
+  flex: 0 0 auto;
 }
-.person-name{ font-weight: 900; font-size: 14px; }
-.person-meta{ min-width: 0; }
 
 .place-name{ font-weight: 900; font-size: 14px; margin-bottom: 4px; }
 .place-media{ margin-top: 10px; display:flex; flex-direction:column; gap: 10px; }

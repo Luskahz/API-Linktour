@@ -1,7 +1,11 @@
-// ===== API =====
+// /js/home.js
+
 const API = {
   usuario: (id) => fetch(`/usuarios/${id}`),
   publicacoes: () => fetch(`/publicacoes`),
+  alocacao: (id) => fetch(`/alocacoes/${id}`),
+
+  disponibilidade: (eventoId) => fetch(`/publicacoes/eventos/${eventoId}/disponibilidade`),
 
   participarEvento: (eventoId, payload) =>
     fetch(`/participacoes/eventos/${eventoId}`, {
@@ -19,44 +23,86 @@ const API = {
     }),
 };
 
-// ===== Auth (front-only / "ríspido") =====
-function redirectToLogin() {
-  sessionStorage.removeItem("linktour_user_id");
-  location.replace("/index.html"); // não volta no "voltar"
+/* navegação */
+function goHome() { location.href = "./home.html"; }
+function goEntrar() { location.href = "/index.html"; }
+function goPerfil() {
+  if (!userId) return goEntrar();
+  location.href = `./perfil.html?id=${encodeURIComponent(userId)}`;
+}
+function goEvento(eventoId) {
+  location.href = `./evento.html?id=${encodeURIComponent(eventoId)}`;
+}
+function goUsuario(idUsuario) {
+  location.href = `./usuario.html?id=${encodeURIComponent(idUsuario)}`;
 }
 
-function requireLoginOrRedirect() {
+/* sessão */
+function getSessionUserId() {
   const raw = (sessionStorage.getItem("linktour_user_id") || "").trim();
   if (!/^\d+$/.test(raw) || Number(raw) <= 0) {
-    redirectToLogin();
+    sessionStorage.removeItem("linktour_user_id");
     return null;
   }
   return raw;
 }
-
-function isAuthProblem(resp) {
-  // 404 aqui costuma significar "usuário não existe" no /usuarios/{id}
-  return resp && (resp.status === 401 || resp.status === 403 || resp.status === 404);
+function redirectToLogin() {
+  sessionStorage.removeItem("linktour_user_id");
+  location.replace("/index.html");
 }
-
 function isAuthOnly(resp) {
   return resp && (resp.status === 401 || resp.status === 403);
 }
 
-// ===== State =====
-let userId = null;       // usuario logado (session)
-let user = null;         // usuario logado (obj)
-let publicacoes = [];    // feed bruto do backend
+/* estado */
+let userId = null;
+let user = null;
+let publicacoes = [];
 
-const authorCache = new Map();        // idUsuario -> usuario response
-const participacaoCache = new Map();  // eventoId -> ParticipacaoEventoResponseDTO | null
-const countdownTimers = new Map();    // eventoId -> intervalId
+const authorCache = new Map();           // idUsuario -> usuario
+const alocacaoCache = new Map();         // idAlocacao -> alocacao | null
+const participacaoCache = new Map();     // eventoId -> participacao | null
+const disponibilidadeCache = new Map();  // eventoId -> number | null
 
-// ===== Utils =====
-function qs(k) {
-  return new URLSearchParams(location.search).get(k);
+/* ui */
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = "block";
+}
+function hideError(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = "";
+  el.style.display = "none";
+}
+function showNotice(msg) {
+  const el = document.getElementById("pageNotice");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = "block";
+}
+function hideNotice() {
+  const el = document.getElementById("pageNotice");
+  if (!el) return;
+  el.textContent = "";
+  el.style.display = "none";
 }
 
+async function readApiError(resp) {
+  const txt = await resp.text().catch(() => "");
+  if (!txt) return `HTTP ${resp.status}`;
+  try {
+    const obj = JSON.parse(txt);
+    const msg = obj.mensagem || obj.message || obj.error || obj.details || obj.title;
+    return (msg ? String(msg) : `HTTP ${resp.status}`).slice(0, 500);
+  } catch {
+    return String(txt).slice(0, 500);
+  }
+}
+
+/* datas */
 function fmtDateTime(dt) {
   if (!dt) return "—";
   try {
@@ -70,100 +116,43 @@ function fmtDateTime(dt) {
     return String(dt);
   }
 }
-
-function showError(id, msg) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = msg;
-  el.style.display = "block";
-}
-
-function hideError(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = "";
-  el.style.display = "none";
-}
-
-function showNotice(msg) {
-  const el = document.getElementById("pageNotice");
-  if (!el) return;
-  el.textContent = msg;
-  el.style.display = "block";
-}
-
-function hideNotice() {
-  const el = document.getElementById("pageNotice");
-  if (!el) return;
-  el.textContent = "";
-  el.style.display = "none";
-}
-
-async function compactError(resp) {
-  const txt = await resp.text().catch(() => "");
-  try {
-    const obj = JSON.parse(txt);
-    const msg = obj.message || obj.error || ("HTTP " + resp.status);
-    return String(msg).slice(0, 320) + (String(msg).length > 320 ? "\n...(cortado)" : "");
-  } catch {
-    return String(txt).slice(0, 320) + (txt.length > 320 ? "\n...(cortado)" : "");
-  }
-}
-
-// ===== Polimorfismo (type guard) =====
-function isEvento(p) {
-  // EventoResponseDTO tem campos que PublicacaoResponseDTO não tem
-  return p && (p.dataInicio != null || p.dataFim != null || p.capacidade != null || p.idAlocacao != null);
-}
-
-// ===== Datas (LocalDateTime do Java -> Date local) =====
 function parseLocalDateTime(dt) {
   if (!dt) return null;
   const s = String(dt).replace("Z", "").split(".")[0];
   const [d, t] = s.split("T");
   if (!d || !t) return null;
-
   const [y, m, day] = d.split("-").map(Number);
   const [hh, mm, ss] = t.split(":").map(Number);
   return new Date(y, (m || 1) - 1, day || 1, hh || 0, mm || 0, ss || 0, 0);
 }
-
 function getEventPhase(ev) {
   const start = parseLocalDateTime(ev?.dataInicio);
   const end = parseLocalDateTime(ev?.dataFim);
   const now = new Date();
-
   if (end && now > end) return { phase: "ended", start, end };
   if (start && now >= start) return { phase: "running", start, end };
   return { phase: "upcoming", start, end };
 }
-
-// participar só se faltar >= 10 minutos (front-only)
 function canJoin(ev) {
   const start = parseLocalDateTime(ev?.dataInicio);
   if (!start) return false;
   return (start - new Date()) >= 10 * 60 * 1000;
 }
-
-// cancelar permitido até o evento começar
 function canCancel(ev) {
   const start = parseLocalDateTime(ev?.dataInicio);
   if (!start) return true;
   return (start - new Date()) > 0;
 }
 
-function isParticipando(part) {
-  if (!part) return false;
-  const st = String(part.status || "").trim().toUpperCase();
-  return st !== "CANCELADO" && st !== "CANCELADA" && st !== "INATIVO";
+/* countdown */
+const countdownTimers = new Map();
+function stopAllCountdowns() {
+  for (const id of countdownTimers.values()) clearInterval(id);
+  countdownTimers.clear();
 }
-
-// ===== Countdown helpers (YMdhms) =====
 function daysInMonth(year, monthIndex0) {
-  // monthIndex0: 0..11
   return new Date(year, monthIndex0 + 1, 0).getDate();
 }
-
 function addMonthsClamped(date, monthsToAdd) {
   const d = new Date(date.getTime());
   const y = d.getFullYear();
@@ -181,7 +170,6 @@ function addMonthsClamped(date, monthsToAdd) {
   out.setFullYear(ny, nm, nd);
   return out;
 }
-
 function addYearsClamped(date, yearsToAdd) {
   const d = new Date(date.getTime());
   const ny = d.getFullYear() + yearsToAdd;
@@ -195,12 +183,9 @@ function addYearsClamped(date, yearsToAdd) {
   out.setFullYear(ny, m, nd);
   return out;
 }
-
 function diffCalendarParts(from, to) {
-  // assume to >= from
   let cursor = new Date(from.getTime());
 
-  // anos
   let years = to.getFullYear() - cursor.getFullYear();
   let test = addYearsClamped(cursor, years);
   if (test > to) {
@@ -209,7 +194,6 @@ function diffCalendarParts(from, to) {
   }
   cursor = test;
 
-  // meses
   let months =
     (to.getFullYear() - cursor.getFullYear()) * 12 +
     (to.getMonth() - cursor.getMonth());
@@ -220,7 +204,6 @@ function diffCalendarParts(from, to) {
   }
   cursor = test;
 
-  // resto em ms -> dias/horas/min/seg
   let ms = to - cursor;
   ms = Math.max(0, ms);
 
@@ -232,7 +215,6 @@ function diffCalendarParts(from, to) {
 
   return { years, months, days, hours, minutes, seconds };
 }
-
 function formatCountdownPT(from, to) {
   if (!from || !to) return "—";
   if (to <= from) return "0s";
@@ -250,14 +232,6 @@ function formatCountdownPT(from, to) {
 
   return parts.join(" ");
 }
-
-// ===== Countdown =====
-function stopAllCountdowns() {
-  for (const id of countdownTimers.values()) clearInterval(id);
-  countdownTimers.clear();
-}
-
-// ===== Countdown (FUNÇÃO INTEIRA ajustada) =====
 function startCountdown(ev, card) {
   const el = card.querySelector("[data-countdown]");
   const btn = card.querySelector("[data-participacao-btn]");
@@ -284,18 +258,12 @@ function startCountdown(ev, card) {
     const diff = start - now;
     const pretty = formatCountdownPT(now, start);
 
-    if (phase === "ended") {
-      el.textContent = "Evento encerrado.";
-    } else if (phase === "running") {
-      el.textContent = "Evento em andamento.";
-    } else {
-      if (diff >= 10 * 60 * 1000) {
-        el.textContent = `⏳ Começa em ${pretty}.`;
-      } else if (diff > 0) {
-        el.textContent = `⏳ Começa em ${pretty} • inscrições encerradas (faltam < 10 min).`;
-      } else {
-        el.textContent = "Evento em andamento.";
-      }
+    if (phase === "ended") el.textContent = "Evento encerrado.";
+    else if (phase === "running") el.textContent = "Evento em andamento.";
+    else {
+      if (diff >= 10 * 60 * 1000) el.textContent = `Começa em ${pretty}.`;
+      else if (diff > 0) el.textContent = `Começa em ${pretty}. Inscrições encerradas (faltam < 10 min).`;
+      else el.textContent = "Evento em andamento.";
     }
 
     if (btn) applyParticipacaoButtonState(ev, card, btn);
@@ -306,41 +274,12 @@ function startCountdown(ev, card) {
   countdownTimers.set(ev.id, intervalId);
 }
 
-// ===== Nav =====
-function goHome() { location.href = "/pages/home.html"; }
-function goEntrar() { location.href = "/index.html"; }
-function goPerfil() {
-  if (!userId) return goEntrar();
-  location.href = `./perfil.html?id=${encodeURIComponent(userId)}`;
-}
-function goEvento(eventoId) {
-  location.href = `./evento.html?id=${encodeURIComponent(eventoId)}`;
-}
-
-// ===== Menu =====
-function toggleUserMenu(force) {
-  const bg = document.getElementById("userMenuBg");
-  if (!bg) return;
-
-  const isOpen = bg.style.display === "grid";
-  const next = (typeof force === "boolean") ? force : !isOpen;
-  bg.style.display = next ? "grid" : "none";
-}
-
-function logout() {
-  toggleUserMenu(false);
-  if (!confirm("Realmente deseja sair?")) return;
-  sessionStorage.removeItem("linktour_user_id");
-  location.href = "/index.html";
-}
-
-// ===== Avatar =====
+/* avatar */
 function escapeXml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;"
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;",
   }[c]));
 }
-
 function svgAvatarDataUri(initial) {
   const ch = escapeXml((initial || "?").toString().slice(0, 1).toUpperCase());
   const svg =
@@ -353,7 +292,12 @@ function svgAvatarDataUri(initial) {
   const b64 = btoa(unescape(encodeURIComponent(svg)));
   return "data:image/svg+xml;base64," + b64;
 }
-
+function getUserAvatarSrc(u) {
+  const nome = (u?.nomeCompleto || "Usuário").trim() || "Usuário";
+  const initial = nome.charAt(0).toUpperCase();
+  const foto = (u?.fotoBase64 || "").trim();
+  return foto ? ("data:image/png;base64," + foto) : svgAvatarDataUri(initial);
+}
 function applyHeaderAndMenuAvatar() {
   const hdrBtn = document.getElementById("hdrAvatarBtn");
   const hdrImg = document.getElementById("hdrAvatarImg");
@@ -362,7 +306,7 @@ function applyHeaderAndMenuAvatar() {
   const umCity = document.getElementById("umCity");
   const btnEntrar = document.getElementById("btnEntrar");
 
-  if (!userId) {
+  if (!userId || !user) {
     if (hdrBtn) hdrBtn.style.display = "none";
     if (btnEntrar) btnEntrar.style.display = "inline-flex";
     return;
@@ -373,10 +317,7 @@ function applyHeaderAndMenuAvatar() {
 
   const nome = (user?.nomeCompleto || "Usuário").trim() || "Usuário";
   const cidade = (user?.cidade || "—").trim() || "—";
-  const initial = nome.charAt(0).toUpperCase();
-  const foto = (user?.fotoBase64 || "").trim();
-
-  const src = foto ? ("data:image/png;base64," + foto) : svgAvatarDataUri(initial);
+  const src = getUserAvatarSrc(user);
 
   if (hdrImg) hdrImg.src = src;
   if (umImg) umImg.src = src;
@@ -384,21 +325,32 @@ function applyHeaderAndMenuAvatar() {
   if (umCity) umCity.textContent = cidade;
 }
 
-// ===== Autor (header do card) =====
+/* menu */
+function toggleUserMenu(force) {
+  const bg = document.getElementById("userMenuBg");
+  if (!bg) return;
+  const isOpen = bg.style.display === "grid";
+  const next = (typeof force === "boolean") ? force : !isOpen;
+  bg.style.display = next ? "grid" : "none";
+}
+function logout() {
+  toggleUserMenu(false);
+  if (!confirm("Realmente deseja sair?")) return;
+  sessionStorage.removeItem("linktour_user_id");
+  location.href = "/index.html";
+}
+
+/* dados */
+function isEvento(p) {
+  return p && (p.dataInicio != null || p.dataFim != null || p.capacidade != null || p.idAlocacao != null);
+}
+
 async function getAutor(idUsuario) {
   if (!idUsuario) return null;
   if (authorCache.has(idUsuario)) return authorCache.get(idUsuario);
-
   try {
     const resp = await API.usuario(idUsuario);
-
-    if (isAuthOnly(resp)) {
-      redirectToLogin();
-      return null;
-    }
-
     if (!resp.ok) return null;
-
     const u = await resp.json();
     authorCache.set(idUsuario, u);
     return u;
@@ -407,23 +359,75 @@ async function getAutor(idUsuario) {
   }
 }
 
-function setAutorUI(cardEl, autor) {
-  const img = cardEl.querySelector("[data-author-img]");
-  const name = cardEl.querySelector("[data-author-name]");
-  const mini = cardEl.querySelector("[data-author-mini]");
-
-  const nome = (autor?.nomeCompleto || "Usuário").trim() || "Usuário";
-  const cidade = (autor?.cidade || "—").trim() || "—";
-  const initial = nome.charAt(0).toUpperCase();
-  const foto = (autor?.fotoBase64 || "").trim();
-  const src = foto ? ("data:image/png;base64," + foto) : svgAvatarDataUri(initial);
-
-  if (img) img.src = src;
-  if (name) name.textContent = nome;
-  if (mini) mini.textContent = cidade;
+async function getAlocacao(idAlocacao) {
+  if (!idAlocacao) return null;
+  if (alocacaoCache.has(idAlocacao)) return alocacaoCache.get(idAlocacao);
+  try {
+    const resp = await API.alocacao(idAlocacao);
+    if (resp.status === 404) {
+      alocacaoCache.set(idAlocacao, null);
+      return null;
+    }
+    if (!resp.ok) {
+      alocacaoCache.set(idAlocacao, null);
+      return null;
+    }
+    const a = await resp.json();
+    alocacaoCache.set(idAlocacao, a);
+    return a;
+  } catch {
+    alocacaoCache.set(idAlocacao, null);
+    return null;
+  }
 }
 
-// ===== Participação (cache) =====
+async function getDisponibilidade(eventoId) {
+  if (!eventoId) return null;
+  if (disponibilidadeCache.has(eventoId)) return disponibilidadeCache.get(eventoId);
+
+  try {
+    const resp = await API.disponibilidade(eventoId);
+
+    if (resp.status === 404) {
+      disponibilidadeCache.set(eventoId, null);
+      return null;
+    }
+    if (!resp.ok) {
+      disponibilidadeCache.set(eventoId, null);
+      return null;
+    }
+
+    const ct = (resp.headers.get("content-type") || "").toLowerCase();
+    let val = null;
+
+    if (ct.includes("application/json")) {
+      const data = await resp.json().catch(() => null);
+      if (typeof data === "number") val = data;
+      else if (data && typeof data === "object") {
+        const n = data.vagas ?? data.disponibilidade ?? data.value ?? data.total;
+        if (typeof n === "number") val = n;
+        else if (typeof n === "string" && /^\d+$/.test(n.trim())) val = Number(n.trim());
+      }
+    } else {
+      const txt = (await resp.text().catch(() => "")).trim();
+      if (/^\d+$/.test(txt)) val = Number(txt);
+    }
+
+    disponibilidadeCache.set(eventoId, val);
+    return val;
+  } catch {
+    disponibilidadeCache.set(eventoId, null);
+    return null;
+  }
+}
+
+/* participação */
+function isParticipando(part) {
+  if (!part) return false;
+  const st = String(part.status || "").trim().toUpperCase();
+  return st !== "CANCELADO" && st !== "CANCELADA" && st !== "INATIVO";
+}
+
 async function ensureParticipacao(eventoId) {
   if (!userId) return null;
   if (participacaoCache.has(eventoId)) return participacaoCache.get(eventoId);
@@ -432,7 +436,11 @@ async function ensureParticipacao(eventoId) {
     const resp = await API.buscarParticipacaoEvento(eventoId, userId);
 
     if (isAuthOnly(resp)) {
-      redirectToLogin();
+      sessionStorage.removeItem("linktour_user_id");
+      userId = null;
+      user = null;
+      applyHeaderAndMenuAvatar();
+      participacaoCache.set(eventoId, null);
       return null;
     }
 
@@ -440,6 +448,7 @@ async function ensureParticipacao(eventoId) {
       participacaoCache.set(eventoId, null);
       return null;
     }
+
     if (!resp.ok) {
       participacaoCache.set(eventoId, null);
       return null;
@@ -457,14 +466,13 @@ async function ensureParticipacao(eventoId) {
 function applyParticipacaoButtonState(ev, card, btn) {
   if (!btn) return;
 
-  // deslogado
   if (!userId) {
     btn.className = "btn primary";
     btn.textContent = "Participar";
     btn.disabled = false;
     btn.title = "";
     btn.onclick = (e) => {
-      if (e?.stopPropagation) e.stopPropagation();
+      e?.stopPropagation?.();
       showNotice("Você precisa entrar para participar.");
       goEntrar();
     };
@@ -480,7 +488,7 @@ function applyParticipacaoButtonState(ev, card, btn) {
     btn.disabled = !canCancel(ev);
     btn.title = btn.disabled ? "Não é possível cancelar após o início do evento." : "";
     btn.onclick = (e) => {
-      if (e?.stopPropagation) e.stopPropagation();
+      e?.stopPropagation?.();
       cancelarParticipacao(ev, btn, card);
     };
   } else {
@@ -489,13 +497,12 @@ function applyParticipacaoButtonState(ev, card, btn) {
     btn.disabled = !canJoin(ev);
     btn.title = btn.disabled ? "Disponível somente até 10 minutos antes do início." : "";
     btn.onclick = (e) => {
-      if (e?.stopPropagation) e.stopPropagation();
+      e?.stopPropagation?.();
       participar(ev, btn, card);
     };
   }
 }
 
-// ===== Participar / Cancelar / Mapa =====
 async function participar(ev, btnEl, card) {
   hideError("pageError");
   hideNotice();
@@ -504,14 +511,13 @@ async function participar(ev, btnEl, card) {
     showNotice("Você precisa entrar para participar.");
     return goEntrar();
   }
-
   if (!canJoin(ev)) {
-    showNotice("Inscrições encerradas (faltam menos de 10 minutos).");
+    showNotice("Inscrições encerradas para este evento.");
     applyParticipacaoButtonState(ev, card, btnEl);
     return;
   }
 
-  const payload = { usuarioId: Number(userId), eventoId: Number(ev.id) };
+  const payload = { usuarioId: Number(userId) };
 
   try {
     btnEl.disabled = true;
@@ -519,23 +525,21 @@ async function participar(ev, btnEl, card) {
 
     const resp = await API.participarEvento(ev.id, payload);
 
-    if (isAuthOnly(resp)) {
-      redirectToLogin();
-      return;
-    }
+    if (isAuthOnly(resp)) return redirectToLogin();
 
     if (!resp.ok) {
-      const msg = await compactError(resp);
-      showError("pageError", "Falha ao participar.\n" + msg);
+      const msg = await readApiError(resp);
+      showError("pageError", msg);
+      await ensureParticipacao(ev.id);
       btnEl.disabled = false;
       applyParticipacaoButtonState(ev, card, btnEl);
       return;
     }
 
-    const part = await resp.json().catch(() => ({ status: "ATIVO" }));
+    const part = await resp.json().catch(() => ({ status: "PENDENTE" }));
     participacaoCache.set(ev.id, part);
 
-    showNotice("Participação registrada!");
+    showNotice("Participação registrada.");
     applyParticipacaoButtonState(ev, card, btnEl);
   } catch (e) {
     console.error(e);
@@ -553,13 +557,11 @@ async function cancelarParticipacao(ev, btnEl, card) {
     showNotice("Você precisa entrar para cancelar.");
     return goEntrar();
   }
-
   if (!canCancel(ev)) {
     showNotice("Não é possível cancelar após o início do evento.");
     applyParticipacaoButtonState(ev, card, btnEl);
     return;
   }
-
   if (!confirm("Cancelar sua participação neste evento?")) {
     applyParticipacaoButtonState(ev, card, btnEl);
     return;
@@ -571,14 +573,11 @@ async function cancelarParticipacao(ev, btnEl, card) {
 
     const resp = await API.cancelarParticipacaoEvento(ev.id, userId);
 
-    if (isAuthOnly(resp)) {
-      redirectToLogin();
-      return;
-    }
+    if (isAuthOnly(resp)) return redirectToLogin();
 
     if (!resp.ok) {
-      const msg = await compactError(resp);
-      showError("pageError", "Falha ao cancelar.\n" + msg);
+      const msg = await readApiError(resp);
+      showError("pageError", msg);
       btnEl.disabled = false;
       applyParticipacaoButtonState(ev, card, btnEl);
       return;
@@ -595,189 +594,169 @@ async function cancelarParticipacao(ev, btnEl, card) {
   }
 }
 
-function verNoMapa(eventoId) {
-  location.href = `./mapa.html?eventoId=${encodeURIComponent(eventoId)}`;
-}
+/* mapa (Leaflet via CDN) */
+let map = null;
+let markersLayer = null;
+const markerByEventId = new Map();
 
-// ===== Card-click helpers =====
-function isInteractiveTarget(target) {
-  if (!target) return false;
-  // qualquer coisa "clicável" dentro do card não deve disparar navegação do card
-  return !!target.closest("button, a, input, select, textarea, label, [role='button']");
-}
+function loadLeaflet() {
+  if (window.L) return Promise.resolve(window.L);
 
-function makeCardClickable(cardEl, eventoId) {
-  // acessibilidade (semântica de botão)
-  cardEl.setAttribute("role", "button");
-  cardEl.setAttribute("tabindex", "0");
-  cardEl.classList.add("card-clickable");
-  cardEl.setAttribute("data-event-id", String(eventoId));
-
-  cardEl.addEventListener("click", (e) => {
-    if (isInteractiveTarget(e.target)) return;
-    goEvento(eventoId);
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    s.async = true;
+    s.onload = () => resolve(window.L);
+    s.onerror = () => reject(new Error("Falha ao carregar Leaflet."));
+    document.head.appendChild(s);
   });
+}
 
-  cardEl.addEventListener("keydown", (e) => {
-    if (isInteractiveTarget(e.target)) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      goEvento(eventoId);
+async function geocodeCity(city) {
+  const q = String(city || "").trim();
+  if (!q) return null;
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 3500);
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
+    const resp = await fetch(url, { signal: ctrl.signal, headers: { "Accept": "application/json" } });
+    if (!resp.ok) return null;
+    const arr = await resp.json().catch(() => null);
+    const first = Array.isArray(arr) ? arr[0] : null;
+    const lat = first ? Number(first.lat) : NaN;
+    const lon = first ? Number(first.lon) : NaN;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { lat, lng: lon };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function initMap() {
+  const el = document.getElementById("map");
+  if (!el) return;
+
+  try {
+    const L = await loadLeaflet();
+
+    map = L.map("map", { zoomControl: true });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(map);
+
+    markersLayer = L.layerGroup().addTo(map);
+
+    const fallback = { lat: -23.6200, lng: -45.4130, zoom: 12 };
+    map.setView([fallback.lat, fallback.lng], fallback.zoom);
+
+    if (user?.cidade) {
+      const geo = await geocodeCity(`${user.cidade}, Brasil`);
+      if (geo) map.setView([geo.lat, geo.lng], 12);
     }
-  });
+
+    const collapse = document.getElementById("mapCollapse");
+    if (collapse) {
+      collapse.addEventListener("change", () => {
+        setTimeout(() => { try { map?.invalidateSize?.(); } catch {} }, 250);
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    showNotice("Mapa indisponível no momento.");
+  }
 }
 
-// ===== Render (cards só de EVENTO) =====
-// (FUNÇÃO INTEIRA ajustada)
-function renderFeed(lista) {
-  stopAllCountdowns();
+function clearMarkers() {
+  markerByEventId.clear();
+  try { markersLayer?.clearLayers?.(); } catch {}
+}
 
-  const box = document.getElementById("listaPublicacoes");
-  if (!box) return;
+function cardElByEventId(eventoId) {
+  return document.querySelector(`.card[data-event-id="${CSS.escape(String(eventoId))}"]`);
+}
 
-  box.innerHTML = "";
+function highlightCard(card) {
+  if (!card) return;
+  const prev = card.style.outline;
+  const prevOff = card.style.outlineOffset;
+  card.style.outline = "2px solid var(--black)";
+  card.style.outlineOffset = "2px";
+  setTimeout(() => {
+    card.style.outline = prev;
+    card.style.outlineOffset = prevOff;
+  }, 900);
+}
 
-  if (!lista || lista.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty";
-    empty.textContent = "Nenhuma publicação encontrada.";
-    box.appendChild(empty);
-    return;
-  }
+function focusEventoOnMap(eventoId) {
+  if (!map || !markerByEventId.has(eventoId)) return;
+  const m = markerByEventId.get(eventoId);
+  try {
+    map.setView(m.getLatLng(), Math.max(map.getZoom(), 14), { animate: true });
+    m.openPopup();
+  } catch {}
+}
 
-  const eventosOnly = lista.filter(isEvento);
+function focusEvento(eventoId) {
+  const card = cardElByEventId(eventoId);
+  highlightCard(card);
+  focusEventoOnMap(eventoId);
+  card?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+}
 
-  if (eventosOnly.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty";
-    empty.textContent = "Nenhum evento encontrado.";
-    box.appendChild(empty);
-    return;
-  }
+async function updateMarkersFromList(eventsList) {
+  if (!map || !markersLayer) return;
 
-  eventosOnly.forEach((ev) => {
-    const card = document.createElement("div");
-    card.className = "card";
+  clearMarkers();
 
-    // card inteiro vira "botão" pra abrir /evento.html?id=...
-    makeCardClickable(card, ev.id);
+  const L = window.L;
+  const items = (eventsList || []).filter(isEvento);
 
-    const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.alignItems = "center";
-    header.style.justifyContent = "space-between";
-    header.style.gap = "10px";
-    header.style.marginBottom = "10px";
+  const points = [];
 
-    header.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-        <img data-author-img style="width:36px;height:36px;border-radius:999px;border:1px solid var(--black);object-fit:cover;background:#fff;" />
-        <div style="min-width:0;">
-          <div style="font-weight:800; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            <span data-author-name>Usuário</span>
-            <span style="font-weight:700;"> compartilhou um evento</span>
-          </div>
-          <div style="font-size:11px; color:#333; display:flex; gap:8px; flex-wrap:wrap;">
-            <span>${fmtDateTime(ev?.dataCriacao)}</span>
-            <span>•</span>
-            <span data-author-mini>—</span>
-          </div>
-        </div>
+  await Promise.all(items.map(async (ev) => {
+    const a = await getAlocacao(ev?.idAlocacao);
+    const lat = Number(a?.latitude);
+    const lng = Number(a?.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const autor = authorCache.get(ev?.idUsuario) || null;
+    const nomeAutor = (autor?.nomeCompleto || "Usuário").trim() || "Usuário";
+
+    const popupHtml = `
+      <div style="font-family:Arial,sans-serif;line-height:1.25;">
+        <div style="font-weight:900;font-size:13px;margin-bottom:4px;">${escapeXml(ev?.titulo || `Evento #${ev?.id ?? "—"}`)}</div>
+        <div style="font-size:12px;color:#222;margin-bottom:6px;">por ${escapeXml(nomeAutor)}</div>
+        <div style="font-size:11px;color:#333;">${escapeXml(a?.nome || "Local")}</div>
       </div>
     `;
 
-    const title = document.createElement("div");
-    title.className = "card-title";
-    title.textContent = ev?.titulo ?? ("Evento #" + (ev?.id ?? "?"));
+    const marker = L.marker([lat, lng]).addTo(markersLayer).bindPopup(popupHtml);
 
-    // dica visual: título clicável também (mas sem duplicar navegação)
-    title.classList.add("card-title-link");
+    marker.on("click", () => focusEvento(ev.id));
 
-    const desc = document.createElement("div");
-    desc.className = "card-desc";
-    desc.textContent = ev?.descricao ?? "";
+    markerByEventId.set(ev.id, marker);
+    points.push([lat, lng]);
+  }));
 
-    const kv = document.createElement("div");
-    kv.className = "kv";
-    kv.innerHTML = `
-      <span>Capacidade: ${ev?.capacidade ?? "—"}</span>
-      <span>Início: ${fmtDateTime(ev?.dataInicio)}</span>
-      <span>Fim: ${fmtDateTime(ev?.dataFim)}</span>
-    `;
-
-    const countdown = document.createElement("div");
-    countdown.className = "mini";
-    countdown.style.marginTop = "8px";
-    countdown.setAttribute("data-countdown", "");
-    countdown.textContent = "Carregando status...";
-
-    const actions = document.createElement("div");
-    actions.style.display = "flex";
-    actions.style.gap = "10px";
-    actions.style.marginTop = "10px";
-    actions.style.flexWrap = "wrap";
-
-    const btnParticipar = document.createElement("button");
-    btnParticipar.className = "btn primary";
-    btnParticipar.type = "button";
-    btnParticipar.textContent = "Participar";
-    btnParticipar.setAttribute("data-participacao-btn", "1");
-
-    // IMPORTANTÍSSIMO: impedir que clique no botão dispare o clique do card
-    btnParticipar.addEventListener("click", (e) => {
-      e.stopPropagation();
-      participar(ev, btnParticipar, card);
-    });
-
-    const btnMapa = document.createElement("button");
-    btnMapa.className = "btn";
-    btnMapa.type = "button";
-    btnMapa.textContent = "Ver no mapa";
-    btnMapa.addEventListener("click", (e) => {
-      e.stopPropagation();
-      verNoMapa(ev.id);
-    });
-
-    const btnDetalhes = document.createElement("button");
-    btnDetalhes.className = "btn";
-    btnDetalhes.type = "button";
-    btnDetalhes.textContent = "Detalhes";
-    btnDetalhes.addEventListener("click", (e) => {
-      e.stopPropagation();
-      goEvento(ev.id);
-    });
-
-    actions.appendChild(btnParticipar);
-    actions.appendChild(btnMapa);
-    actions.appendChild(btnDetalhes);
-
-    card.appendChild(header);
-    card.appendChild(title);
-    if ((ev?.descricao ?? "").trim()) card.appendChild(desc);
-    card.appendChild(kv);
-    card.appendChild(countdown);
-    card.appendChild(actions);
-
-    box.appendChild(card);
-
-    // hidrata autor async
-    (async () => {
-      const autor = await getAutor(ev?.idUsuario);
-      if (autor) setAutorUI(card, autor);
-    })();
-
-    // participa/cancela: busca participação e aplica estado
-    (async () => {
-      if (userId) await ensureParticipacao(ev.id);
-      applyParticipacaoButtonState(ev, card, btnParticipar);
-    })();
-
-    // countdown sempre
-    startCountdown(ev, card);
-  });
+  if (points.length >= 2) {
+    try {
+      map.fitBounds(points, { padding: [18, 18] });
+    } catch {}
+  } else if (points.length === 1) {
+    try {
+      map.setView(points[0], 14, { animate: true });
+    } catch {}
+  }
 }
 
-// ===== Filters (client-side) =====
+/* filtros */
 function getFilterState() {
   return {
     q: (document.getElementById("q")?.value || "").trim(),
@@ -805,7 +784,6 @@ function sortList(list, sort) {
     return arr;
   }
 
-  // recentes: dataCriacao desc, senão id desc
   arr.sort((a, b) => {
     const ac = String(a?.dataCriacao || "");
     const bc = String(b?.dataCriacao || "");
@@ -823,35 +801,33 @@ function applyFilters() {
   const f = getFilterState();
   let out = [...(publicacoes || [])];
 
-  // busca texto
   if (f.q) {
     const q = f.q.toLowerCase();
-    out = out.filter(p =>
+    out = out.filter((p) =>
       String(p?.titulo || "").toLowerCase().includes(q) ||
       String(p?.descricao || "").toLowerCase().includes(q)
     );
   }
 
-  // datas:
   if (f.de) {
     const start = f.de + "T00:00:00";
-    out = out.filter(p => {
+    out = out.filter((p) => {
       const key = isEvento(p) ? String(p?.dataInicio || "") : String(p?.dataCriacao || "");
       return key >= start;
     });
   }
+
   if (f.ate) {
     const end = f.ate + "T23:59:59";
-    out = out.filter(p => {
+    out = out.filter((p) => {
       const key = isEvento(p) ? String(p?.dataFim || "") : String(p?.dataCriacao || "");
       return key <= end;
     });
   }
 
-  // cidade (autor)
   if (f.cidade) {
     const c = f.cidade.toLowerCase();
-    out = out.filter(p => {
+    out = out.filter((p) => {
       const autor = authorCache.get(p?.idUsuario);
       if (!autor) return true;
       return String(autor?.cidade || "").toLowerCase().includes(c);
@@ -882,15 +858,277 @@ function clearFilters() {
   applyFilters();
 }
 
-// ===== Fetch =====
+/* render */
+function isInteractiveTarget(target) {
+  if (!target) return false;
+  return !!target.closest("button, a, input, select, textarea, label, [role='button']");
+}
+
+function makeCardFocusable(cardEl, eventoId) {
+  cardEl.setAttribute("role", "button");
+  cardEl.setAttribute("tabindex", "0");
+  cardEl.classList.add("card-clickable");
+  cardEl.setAttribute("data-event-id", String(eventoId));
+
+  cardEl.addEventListener("click", (e) => {
+    if (isInteractiveTarget(e.target)) return;
+    focusEvento(eventoId);
+  });
+
+  cardEl.addEventListener("keydown", (e) => {
+    if (isInteractiveTarget(e.target)) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      focusEvento(eventoId);
+    }
+  });
+}
+
+function buildAuthorHeader(ev) {
+  const wrap = document.createElement("div");
+  wrap.style.display = "flex";
+  wrap.style.alignItems = "center";
+  wrap.style.justifyContent = "space-between";
+  wrap.style.gap = "10px";
+  wrap.style.marginBottom = "10px";
+
+  const left = document.createElement("div");
+  left.style.display = "flex";
+  left.style.alignItems = "center";
+  left.style.gap = "10px";
+  left.style.minWidth = "0";
+
+  const aLink = document.createElement("a");
+  aLink.href = `./usuario.html?id=${encodeURIComponent(ev?.idUsuario ?? "")}`;
+  aLink.style.display = "inline-flex";
+  aLink.style.alignItems = "center";
+  aLink.style.gap = "10px";
+  aLink.style.textDecoration = "none";
+  aLink.style.color = "inherit";
+  aLink.addEventListener("click", (e) => e.stopPropagation());
+
+  const img = document.createElement("img");
+  img.setAttribute("data-author-img", "1");
+  img.alt = "Autor";
+  img.style.width = "36px";
+  img.style.height = "36px";
+  img.style.borderRadius = "999px";
+  img.style.border = "1px solid var(--black)";
+  img.style.objectFit = "cover";
+  img.style.background = "#fff";
+  img.src = svgAvatarDataUri("U");
+
+  const meta = document.createElement("div");
+  meta.style.minWidth = "0";
+
+  const line1 = document.createElement("div");
+  line1.style.fontWeight = "800";
+  line1.style.fontSize = "13px";
+  line1.style.whiteSpace = "nowrap";
+  line1.style.overflow = "hidden";
+  line1.style.textOverflow = "ellipsis";
+
+  const nm = document.createElement("span");
+  nm.setAttribute("data-author-name", "1");
+  nm.textContent = "Usuário";
+
+  const suffix = document.createElement("span");
+  suffix.style.fontWeight = "700";
+  suffix.textContent = " compartilhou um evento";
+
+  line1.appendChild(nm);
+  line1.appendChild(suffix);
+
+  const line2 = document.createElement("div");
+  line2.style.fontSize = "11px";
+  line2.style.color = "#333";
+  line2.style.display = "flex";
+  line2.style.gap = "8px";
+  line2.style.flexWrap = "wrap";
+
+  const dt = document.createElement("span");
+  dt.textContent = fmtDateTime(ev?.dataCriacao);
+
+  const dot = document.createElement("span");
+  dot.textContent = "•";
+
+  const mini = document.createElement("span");
+  mini.setAttribute("data-author-mini", "1");
+  mini.textContent = "—";
+
+  line2.appendChild(dt);
+  line2.appendChild(dot);
+  line2.appendChild(mini);
+
+  meta.appendChild(line1);
+  meta.appendChild(line2);
+
+  aLink.appendChild(img);
+  aLink.appendChild(meta);
+
+  left.appendChild(aLink);
+  wrap.appendChild(left);
+
+  return wrap;
+}
+
+function setAutorUI(cardEl, autor) {
+  const img = cardEl.querySelector("[data-author-img]");
+  const name = cardEl.querySelector("[data-author-name]");
+  const mini = cardEl.querySelector("[data-author-mini]");
+
+  const nome = (autor?.nomeCompleto || "Usuário").trim() || "Usuário";
+  const cidade = (autor?.cidade || "—").trim() || "—";
+
+  if (img) img.src = getUserAvatarSrc(autor);
+  if (name) name.textContent = nome;
+  if (mini) mini.textContent = cidade;
+}
+
+async function setVagasUI(spanEl, eventoId) {
+  if (!spanEl) return;
+  const val = await getDisponibilidade(eventoId);
+  if (val === null || !Number.isFinite(val)) {
+    spanEl.textContent = "Vagas: —";
+    return;
+  }
+  spanEl.textContent = `Vagas: ${val}`;
+  spanEl.classList.add("pill-strong");
+}
+
+function renderFeed(lista) {
+  stopAllCountdowns();
+
+  const box = document.getElementById("listaPublicacoes");
+  if (!box) return;
+
+  box.innerHTML = "";
+
+  const eventosOnly = (lista || []).filter(isEvento);
+
+  if (!eventosOnly.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "Nenhum evento encontrado.";
+    box.appendChild(empty);
+    clearMarkers();
+    return;
+  }
+
+  eventosOnly.forEach((ev) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    makeCardFocusable(card, ev.id);
+
+    const header = buildAuthorHeader(ev);
+
+    const title = document.createElement("div");
+    title.className = "card-title";
+    title.textContent = ev?.titulo ?? ("Evento #" + (ev?.id ?? "?"));
+
+    const desc = document.createElement("div");
+    desc.className = "card-desc";
+    desc.textContent = ev?.descricao ?? "";
+
+    const kv = document.createElement("div");
+    kv.className = "kv";
+
+    const sVagas = document.createElement("span");
+    sVagas.setAttribute("data-vagas", "1");
+    sVagas.textContent = "Vagas: —";
+
+    const sCap = document.createElement("span");
+    sCap.textContent = `Capacidade: ${ev?.capacidade ?? "—"}`;
+
+    const sIni = document.createElement("span");
+    sIni.textContent = `Início: ${fmtDateTime(ev?.dataInicio)}`;
+
+    const sFim = document.createElement("span");
+    sFim.textContent = `Fim: ${fmtDateTime(ev?.dataFim)}`;
+
+    kv.appendChild(sVagas);
+    kv.appendChild(sCap);
+    kv.appendChild(sIni);
+    kv.appendChild(sFim);
+
+    const countdown = document.createElement("div");
+    countdown.className = "mini";
+    countdown.style.marginTop = "8px";
+    countdown.setAttribute("data-countdown", "");
+    countdown.textContent = "Carregando status...";
+
+    const actions = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.gap = "10px";
+    actions.style.marginTop = "10px";
+    actions.style.flexWrap = "wrap";
+
+    const btnParticipar = document.createElement("button");
+    btnParticipar.className = "btn primary";
+    btnParticipar.type = "button";
+    btnParticipar.textContent = "Participar";
+    btnParticipar.setAttribute("data-participacao-btn", "1");
+    btnParticipar.addEventListener("click", (e) => {
+      e.stopPropagation();
+      participar(ev, btnParticipar, card);
+    });
+
+    const btnMais = document.createElement("button");
+    btnMais.className = "btn";
+    btnMais.type = "button";
+    btnMais.textContent = "Ver mais";
+    btnMais.addEventListener("click", (e) => {
+      e.stopPropagation();
+      goEvento(ev.id);
+    });
+
+    actions.appendChild(btnParticipar);
+    actions.appendChild(btnMais);
+
+    card.appendChild(header);
+    card.appendChild(title);
+    if ((ev?.descricao ?? "").trim()) card.appendChild(desc);
+    card.appendChild(kv);
+    card.appendChild(countdown);
+    card.appendChild(actions);
+
+    box.appendChild(card);
+
+    (async () => {
+      const autor = await getAutor(ev?.idUsuario);
+      if (autor) setAutorUI(card, autor);
+    })();
+
+    (async () => {
+      await setVagasUI(sVagas, ev.id);
+    })();
+
+    (async () => {
+      if (userId) await ensureParticipacao(ev.id);
+      applyParticipacaoButtonState(ev, card, btnParticipar);
+    })();
+
+    startCountdown(ev, card);
+  });
+
+  updateMarkersFromList(eventosOnly).catch(() => {});
+}
+
+/* carga */
 async function refreshUser() {
+  if (!userId) return false;
+
   const resp = await API.usuario(userId);
 
-  if (isAuthProblem(resp)) return redirectToLogin();
-
-  if (!resp.ok) {
-    return redirectToLogin();
+  if (isAuthOnly(resp) || resp.status === 404) {
+    sessionStorage.removeItem("linktour_user_id");
+    userId = null;
+    user = null;
+    applyHeaderAndMenuAvatar();
+    return false;
   }
+
+  if (!resp.ok) return false;
 
   user = await resp.json();
   return true;
@@ -901,34 +1139,29 @@ async function refreshFeed() {
 
   const resp = await API.publicacoes();
 
-  if (isAuthOnly(resp)) return redirectToLogin();
-
   if (!resp.ok) {
-    const msg = await compactError(resp);
-    showError("pageError", "Falha ao carregar publicações.\n" + msg);
+    const msg = await readApiError(resp);
+    showError("pageError", msg);
     publicacoes = [];
     return;
   }
 
   publicacoes = await resp.json();
 
-  // pré-carrega autores
-  const ids = [...new Set((publicacoes || []).map(p => p?.idUsuario).filter(Boolean))];
-  await Promise.all(ids.map(id => getAutor(id)));
+  const ids = [...new Set((publicacoes || []).map((p) => p?.idUsuario).filter(Boolean))];
+  await Promise.all(ids.map((id) => getAutor(id)));
 
   participacaoCache.clear();
+  disponibilidadeCache.clear();
 }
 
-// ===== Start =====
+/* init */
 (function init() {
-  userId = requireLoginOrRedirect();
-  if (!userId) return;
+  userId = getSessionUserId();
 
-  // fechar menu clicando fora
   const bg = document.getElementById("userMenuBg");
   if (bg) bg.addEventListener("click", () => toggleUserMenu(false));
 
-  // enter no search
   const qInput = document.getElementById("q");
   if (qInput) {
     qInput.addEventListener("keydown", (e) => {
@@ -938,8 +1171,17 @@ async function refreshFeed() {
 
   (async () => {
     try {
-      await refreshUser();
+      if (userId) await refreshUser();
       applyHeaderAndMenuAvatar();
+
+      const hint = document.getElementById("hintCidade");
+      const cidadeInput = document.getElementById("cidade");
+      if (user?.cidade && cidadeInput && !String(cidadeInput.value || "").trim()) {
+        cidadeInput.value = user.cidade;
+      }
+      if (hint) hint.textContent = user?.cidade ? `Sugerido: ${user.cidade}` : "";
+
+      await initMap();
 
       await refreshFeed();
       applyFilters();

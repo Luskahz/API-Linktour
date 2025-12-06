@@ -1,19 +1,20 @@
+<!-- perfil.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>linktour • perfil</title>
-
     <link rel="stylesheet" href="../css/perfil.css" />
 </head>
 
 <body>
 <header>
     <a class="title-link" href="./home.html">linktour</a>
+
     <div class="hdr-actions">
         <button class="avatar-btn" type="button" onclick="toggleUserMenu()">
-            <img id="hdrAvatarImg" />
+            <img id="hdrAvatarImg" alt="Avatar do usuário" />
         </button>
     </div>
 </header>
@@ -24,17 +25,15 @@
 
         <div class="hero-body">
             <div class="profile-row">
-                <div class="avatar" id="avatar">?</div>
+                <div class="avatar" id="avatar" aria-label="Avatar">?</div>
 
                 <div class="user-meta">
                     <div class="name" id="nomeCompleto">Carregando...</div>
 
-                    <!-- email removido da UI -->
                     <div class="subline" id="subline">
                         <span class="pill" id="pillCidade">cidade</span>
                     </div>
 
-                    <!-- aqui fica: solicitar parceria / status + editar perfil -->
                     <div class="hero-actions" id="parceriaArea"></div>
 
                     <div class="stats">
@@ -253,15 +252,92 @@
     </div>
 </div>
 
+<!-- MODAL: CONFIRMAR EXCLUSÃO EVENTO -->
+<div class="modal-bg" id="modalDeleteEvento">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delEventoTitle" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="delEventoTitle">Excluir evento</h3>
+            <button class="x" type="button" onclick="closeModal('modalDeleteEvento')">X</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="error" id="delEventoError"></div>
+
+            <div class="row">
+                <div class="mini" id="delEventoHint">
+                    Confirme para excluir o evento selecionado.
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn danger" type="button" id="btnConfirmDeleteEvento">Excluir</button>
+                <button class="btn" type="button" onclick="closeModal('modalDeleteEvento')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CONFIRMAR EXCLUSÃO ALOCAÇÃO -->
+<div class="modal-bg" id="modalDeleteAlocacao">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delAlocTitle" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="delAlocTitle">Excluir alocação</h3>
+            <button class="x" type="button" onclick="closeModal('modalDeleteAlocacao')">X</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="error" id="delAlocError"></div>
+
+            <div class="row">
+                <div class="mini" id="delAlocHint">
+                    Se houver eventos planejados, o servidor poderá bloquear e retornar uma mensagem de regra de negócio.
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn danger" type="button" id="btnConfirmDeleteAlocacao">Excluir</button>
+                <button class="btn" type="button" onclick="closeModal('modalDeleteAlocacao')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: EXCLUIR CONTA -->
+<div class="modal-bg" id="modalDeleteAccount">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delAccTitle" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="delAccTitle">Excluir conta</h3>
+            <button class="x" type="button" onclick="closeModal('modalDeleteAccount')">X</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="error" id="delAccError"></div>
+
+            <div class="row">
+                <label class="req">Senha</label>
+                <input id="delAccSenha" type="password" autocomplete="current-password" placeholder="Digite sua senha" />
+                <div class="mini">A confirmação será feita validando sua senha antes da exclusão.</div>
+            </div>
+
+            <div class="actions">
+                <button class="btn danger" type="button" id="btnConfirmDeleteAccount">Excluir conta</button>
+                <button class="btn" type="button" onclick="closeModal('modalDeleteAccount')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MENU USUÁRIO -->
 <div class="user-menu-bg" id="userMenuBg">
     <div class="user-menu" id="userMenu" onclick="event.stopPropagation()">
-    <div class="um-header">
-            <img id="umAvatarImg" class="um-avatar" />
+        <div class="um-header">
+            <img id="umAvatarImg" class="um-avatar" alt="Avatar no menu" />
             <div class="um-name" id="umName"></div>
         </div>
 
         <div class="um-items">
-            <button class="um-item exit" onclick="logout()">Sair</button>
+            <button class="um-item danger" type="button" onclick="openModal('modalDeleteAccount')">Excluir conta</button>
+            <button class="um-item exit" type="button" onclick="logout()">Sair</button>
         </div>
     </div>
 </div>

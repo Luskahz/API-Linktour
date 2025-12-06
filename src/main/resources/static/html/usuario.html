@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>linktour • usuário</title>
+
+    <link rel="stylesheet" href="../css/usuario.css" />
+</head>
+
+<body>
+<header>
+    <div class="title" onclick="goHome()" role="button" tabindex="0">linktour</div>
+
+    <div class="hdr-actions">
+        <button class="hdr-btn" id="btnVoltar" type="button" onclick="goBack()">Voltar</button>
+
+        <button class="avatar-btn" id="hdrAvatarBtn" type="button" onclick="toggleUserMenu()">
+            <img id="hdrAvatarImg" alt="Avatar do usuário" />
+        </button>
+
+        <button class="hdr-btn" id="btnEntrar" type="button" onclick="goEntrar()">Entrar</button>
+    </div>
+</header>
+
+<main>
+    <section class="hero" aria-label="perfil do usuário">
+        <div class="cover"></div>
+
+        <div class="hero-body">
+            <div class="profile-row">
+                <div class="avatar" id="avatar">?</div>
+
+                <div class="user-meta">
+                    <div class="name" id="nomeCompleto">Carregando...</div>
+
+                    <div class="subline" id="subline">
+                        <span class="pill" id="pillCidade">—</span>
+                    </div>
+
+                    <div class="hero-actions" id="actionsArea">
+                        <button class="btn" type="button" id="btnAbrirPerfil" onclick="openFullProfile()" style="display:none;">
+                            Ver perfil completo
+                        </button>
+
+                        <button class="btn primary" type="button" id="btnSeguir" disabled>
+                            Seguir
+                        </button>
+
+                        <button class="btn" type="button" id="btnMensagem" disabled>
+                            Contato
+                        </button>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="label">Eventos</div>
+                            <div class="value" id="countEventos">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="label">Alocações</div>
+                            <div class="value" id="countAlocacoes">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mini" id="lastUpdate">—</div>
+        </div>
+    </section>
+
+    <section class="panel" aria-label="conteúdo">
+        <div class="tabs">
+            <div class="tab active" id="tabEventos" onclick="setTab('eventos')">Eventos</div>
+            <div class="tab" id="tabAlocacoes" onclick="setTab('alocacoes')">Alocações</div>
+        </div>
+
+        <div class="content">
+            <div class="error" id="pageError"></div>
+            <div class="notice" id="pageNotice"></div>
+
+            <div class="list" id="listaEventos"></div>
+            <div class="list" id="listaAlocacoes" style="display:none;"></div>
+
+            <div class="footer-actions">
+                <button class="btn" type="button" id="btnTop" onclick="scrollToTop()">Topo</button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- MENU USUÁRIO (usuário logado) -->
+<div class="user-menu-bg" id="userMenuBg">
+    <div class="user-menu" id="userMenu" onclick="event.stopPropagation()">
+        <div class="um-header">
+            <img id="umAvatarImg" class="um-avatar" alt="Avatar do usuário" />
+            <div>
+                <div class="um-name" id="umName">Usuário</div>
+                <div class="um-mini" id="umCity">—</div>
+            </div>
+        </div>
+
+        <div class="um-items">
+            <button class="um-item" type="button" onclick="goPerfil()">Meu perfil</button>
+            <button class="um-item exit" type="button" onclick="logout()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div>© linktour 2025 • IFSP Caraguatatuba</div>
+</footer>
+
+<script src="../js/usuario.js"></script>
+</body>
+</html>
