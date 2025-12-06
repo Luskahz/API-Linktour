@@ -1,5 +1,3 @@
-// /js/home.js
-
 const API = {
   usuario: (id) => fetch(`/usuarios/${id}`),
   publicacoes: () => fetch(`/publicacoes`),
@@ -59,10 +57,12 @@ let userId = null;
 let user = null;
 let publicacoes = [];
 
-const authorCache = new Map();           // idUsuario -> usuario
-const alocacaoCache = new Map();         // idAlocacao -> alocacao | null
-const participacaoCache = new Map();     // eventoId -> participacao | null
-const disponibilidadeCache = new Map();  // eventoId -> number | null
+const authorCache = new Map();
+const alocacaoCache = new Map();
+const participacaoCache = new Map();
+const disponibilidadeCache = new Map();
+
+const inFlight = new Map(); // eventoId -> "participar" | "cancelar" | null
 
 /* ui */
 function showError(id, msg) {
@@ -247,7 +247,7 @@ function startCountdown(ev, card) {
 
     if (!start) {
       el.textContent = "Sem data de início.";
-      if (btn) {
+      if (btn && !inFlight.get(ev.id)) {
         btn.disabled = true;
         btn.title = "Evento sem data de início.";
       }
@@ -351,7 +351,7 @@ async function getAutor(idUsuario) {
   try {
     const resp = await API.usuario(idUsuario);
     if (!resp.ok) return null;
-    const u = await resp.json();
+    const u = await resp.json().catch(() => null);
     authorCache.set(idUsuario, u);
     return u;
   } catch {
@@ -372,7 +372,7 @@ async function getAlocacao(idAlocacao) {
       alocacaoCache.set(idAlocacao, null);
       return null;
     }
-    const a = await resp.json();
+    const a = await resp.json().catch(() => null);
     alocacaoCache.set(idAlocacao, a);
     return a;
   } catch {
@@ -454,7 +454,7 @@ async function ensureParticipacao(eventoId) {
       return null;
     }
 
-    const part = await resp.json();
+    const part = await resp.json().catch(() => null);
     participacaoCache.set(eventoId, part);
     return part;
   } catch {
@@ -465,6 +465,24 @@ async function ensureParticipacao(eventoId) {
 
 function applyParticipacaoButtonState(ev, card, btn) {
   if (!btn) return;
+
+  const op = inFlight.get(ev.id);
+  if (op === "participar") {
+    btn.className = "btn primary";
+    btn.textContent = "Enviando...";
+    btn.disabled = true;
+    btn.title = "";
+    btn.onclick = (e) => e?.stopPropagation?.();
+    return;
+  }
+  if (op === "cancelar") {
+    btn.className = "btn";
+    btn.textContent = "Cancelando...";
+    btn.disabled = true;
+    btn.title = "";
+    btn.onclick = (e) => e?.stopPropagation?.();
+    return;
+  }
 
   if (!userId) {
     btn.className = "btn primary";
@@ -516,13 +534,14 @@ async function participar(ev, btnEl, card) {
     applyParticipacaoButtonState(ev, card, btnEl);
     return;
   }
+  if (inFlight.get(ev.id)) return;
+
+  inFlight.set(ev.id, "participar");
+  applyParticipacaoButtonState(ev, card, btnEl);
 
   const payload = { usuarioId: Number(userId) };
 
   try {
-    btnEl.disabled = true;
-    btnEl.textContent = "Enviando...";
-
     const resp = await API.participarEvento(ev.id, payload);
 
     if (isAuthOnly(resp)) return redirectToLogin();
@@ -531,20 +550,21 @@ async function participar(ev, btnEl, card) {
       const msg = await readApiError(resp);
       showError("pageError", msg);
       await ensureParticipacao(ev.id);
-      btnEl.disabled = false;
-      applyParticipacaoButtonState(ev, card, btnEl);
       return;
     }
 
     const part = await resp.json().catch(() => ({ status: "PENDENTE" }));
     participacaoCache.set(ev.id, part);
 
+    disponibilidadeCache.delete(ev.id);
+    const vagasEl = card?.querySelector?.("[data-vagas]");
+    if (vagasEl) setVagasUI(vagasEl, ev.id).catch(() => {});
     showNotice("Participação registrada.");
-    applyParticipacaoButtonState(ev, card, btnEl);
   } catch (e) {
     console.error(e);
     showError("pageError", "Erro de rede/servidor ao participar.");
-    btnEl.disabled = false;
+  } finally {
+    inFlight.delete(ev.id);
     applyParticipacaoButtonState(ev, card, btnEl);
   }
 }
@@ -562,15 +582,16 @@ async function cancelarParticipacao(ev, btnEl, card) {
     applyParticipacaoButtonState(ev, card, btnEl);
     return;
   }
+  if (inFlight.get(ev.id)) return;
   if (!confirm("Cancelar sua participação neste evento?")) {
     applyParticipacaoButtonState(ev, card, btnEl);
     return;
   }
 
-  try {
-    btnEl.disabled = true;
-    btnEl.textContent = "Cancelando...";
+  inFlight.set(ev.id, "cancelar");
+  applyParticipacaoButtonState(ev, card, btnEl);
 
+  try {
     const resp = await API.cancelarParticipacaoEvento(ev.id, userId);
 
     if (isAuthOnly(resp)) return redirectToLogin();
@@ -578,23 +599,25 @@ async function cancelarParticipacao(ev, btnEl, card) {
     if (!resp.ok) {
       const msg = await readApiError(resp);
       showError("pageError", msg);
-      btnEl.disabled = false;
-      applyParticipacaoButtonState(ev, card, btnEl);
       return;
     }
 
     participacaoCache.set(ev.id, null);
+
+    disponibilidadeCache.delete(ev.id);
+    const vagasEl = card?.querySelector?.("[data-vagas]");
+    if (vagasEl) setVagasUI(vagasEl, ev.id).catch(() => {});
     showNotice("Participação cancelada.");
-    applyParticipacaoButtonState(ev, card, btnEl);
   } catch (e) {
     console.error(e);
     showError("pageError", "Erro de rede/servidor ao cancelar participação.");
-    btnEl.disabled = false;
+  } finally {
+    inFlight.delete(ev.id);
     applyParticipacaoButtonState(ev, card, btnEl);
   }
 }
 
-/* mapa (Leaflet via CDN) */
+/* mapa */
 let map = null;
 let markersLayer = null;
 const markerByEventId = new Map();
@@ -621,7 +644,7 @@ async function geocodeCity(city) {
 
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
-    const resp = await fetch(url, { signal: ctrl.signal, headers: { "Accept": "application/json" } });
+    const resp = await fetch(url, { signal: ctrl.signal, headers: { Accept: "application/json" } });
     if (!resp.ok) return null;
     const arr = await resp.json().catch(() => null);
     const first = Array.isArray(arr) ? arr[0] : null;
@@ -652,7 +675,7 @@ async function initMap() {
 
     markersLayer = L.layerGroup().addTo(map);
 
-    const fallback = { lat: -23.6200, lng: -45.4130, zoom: 12 };
+    const fallback = { lat: -23.62, lng: -45.413, zoom: 12 };
     map.setView([fallback.lat, fallback.lng], fallback.zoom);
 
     if (user?.cidade) {
@@ -738,7 +761,6 @@ async function updateMarkersFromList(eventsList) {
     `;
 
     const marker = L.marker([lat, lng]).addTo(markersLayer).bindPopup(popupHtml);
-
     marker.on("click", () => focusEvento(ev.id));
 
     markerByEventId.set(ev.id, marker);
@@ -746,13 +768,9 @@ async function updateMarkersFromList(eventsList) {
   }));
 
   if (points.length >= 2) {
-    try {
-      map.fitBounds(points, { padding: [18, 18] });
-    } catch {}
+    try { map.fitBounds(points, { padding: [18, 18] }); } catch {}
   } else if (points.length === 1) {
-    try {
-      map.setView(points[0], 14, { animate: true });
-    } catch {}
+    try { map.setView(points[0], 14, { animate: true }); } catch {}
   }
 }
 
@@ -1068,10 +1086,6 @@ function renderFeed(lista) {
     btnParticipar.type = "button";
     btnParticipar.textContent = "Participar";
     btnParticipar.setAttribute("data-participacao-btn", "1");
-    btnParticipar.addEventListener("click", (e) => {
-      e.stopPropagation();
-      participar(ev, btnParticipar, card);
-    });
 
     const btnMais = document.createElement("button");
     btnMais.className = "btn";
@@ -1130,8 +1144,8 @@ async function refreshUser() {
 
   if (!resp.ok) return false;
 
-  user = await resp.json();
-  return true;
+  user = await resp.json().catch(() => null);
+  return !!user;
 }
 
 async function refreshFeed() {
@@ -1146,13 +1160,14 @@ async function refreshFeed() {
     return;
   }
 
-  publicacoes = await resp.json();
+  publicacoes = await resp.json().catch(() => []);
 
   const ids = [...new Set((publicacoes || []).map((p) => p?.idUsuario).filter(Boolean))];
   await Promise.all(ids.map((id) => getAutor(id)));
 
   participacaoCache.clear();
   disponibilidadeCache.clear();
+  inFlight.clear();
 }
 
 /* init */

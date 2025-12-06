@@ -2,15 +2,17 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>linktour • usuário</title>
-
     <link rel="stylesheet" href="../css/usuario.css" />
 </head>
 
 <body>
 <header>
-    <div class="title" onclick="goHome()" role="button" tabindex="0">linktour</div>
+    <div class="title" onclick="goHome()" role="button" tabindex="0"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goHome();}">
+        linktour
+    </div>
 
     <div class="hdr-actions">
         <button class="hdr-btn" id="btnVoltar" type="button" onclick="goBack()">Voltar</button>
@@ -29,7 +31,7 @@
 
         <div class="hero-body">
             <div class="profile-row">
-                <div class="avatar" id="avatar">?</div>
+                <div class="avatar" id="avatar" aria-label="Avatar">?</div>
 
                 <div class="user-meta">
                     <div class="name" id="nomeCompleto">Carregando...</div>
@@ -52,7 +54,7 @@
                         </button>
                     </div>
 
-                    <div class="stats">
+                    <div class="stats" aria-label="resumo">
                         <div class="stat">
                             <div class="label">Eventos</div>
                             <div class="value" id="countEventos">—</div>
@@ -70,14 +72,22 @@
     </section>
 
     <section class="panel" aria-label="conteúdo">
-        <div class="tabs">
-            <div class="tab active" id="tabEventos" onclick="setTab('eventos')">Eventos</div>
-            <div class="tab" id="tabAlocacoes" onclick="setTab('alocacoes')">Alocações</div>
+        <div class="tabs" role="tablist" aria-label="seções">
+            <div class="tab active" id="tabEventos" role="tab" tabindex="0"
+                 onclick="setTab('eventos')"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setTab('eventos');}">
+                Eventos
+            </div>
+            <div class="tab" id="tabAlocacoes" role="tab" tabindex="0"
+                 onclick="setTab('alocacoes')"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setTab('alocacoes');}">
+                Alocações
+            </div>
         </div>
 
         <div class="content">
-            <div class="error" id="pageError"></div>
-            <div class="notice" id="pageNotice"></div>
+            <div class="error" id="pageError" role="alert" aria-live="assertive"></div>
+            <div class="notice" id="pageNotice" role="status" aria-live="polite"></div>
 
             <div class="list" id="listaEventos"></div>
             <div class="list" id="listaAlocacoes" style="display:none;"></div>
@@ -89,7 +99,6 @@
     </section>
 </main>
 
-<!-- MENU USUÁRIO (usuário logado) -->
 <div class="user-menu-bg" id="userMenuBg">
     <div class="user-menu" id="userMenu" onclick="event.stopPropagation()">
         <div class="um-header">

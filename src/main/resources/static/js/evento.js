@@ -1,4 +1,3 @@
-// evento.js
 const API = {
   evento: (id) => fetch(`/publicacoes/${id}`),
   disponibilidade: (eventoId) => fetch(`/publicacoes/eventos/${eventoId}/disponibilidade`),

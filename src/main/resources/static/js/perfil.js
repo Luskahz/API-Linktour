@@ -1,5 +1,3 @@
-// perfil.js
-
 // API
 const API = {
   usuario: (id) => fetch(`/usuarios/${encodeURIComponent(id)}`),

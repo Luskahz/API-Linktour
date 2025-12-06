@@ -1,10 +1,11 @@
-// usuario.js
+// api
 const API = {
   usuario: (id) => fetch(`/usuarios/${id}`),
   eventosDoUsuario: (id) => fetch(`/usuarios/${id}/eventos`),
   alocacoesDoUsuario: (id) => fetch(`/usuarios/${id}/alocacoes`),
 };
 
+// state
 let meId = null;
 let me = null;
 
@@ -15,6 +16,7 @@ let tab = "eventos";
 let eventos = [];
 let alocacoes = [];
 
+// utils
 function qs(k) { return new URLSearchParams(location.search).get(k); }
 
 function showError(id, msg) {
@@ -42,19 +44,6 @@ function hideNotice() {
   el.style.display = "none";
 }
 
-async function compactError(resp) {
-  const txt = await resp.text().catch(() => "");
-  try {
-    const obj = JSON.parse(txt);
-    const msg = obj.message || obj.error || ("HTTP " + resp.status);
-    const s = String(msg);
-    return s.slice(0, 420) + (s.length > 420 ? "\n...(cortado)" : "");
-  } catch {
-    const s = String(txt || ("HTTP " + resp.status));
-    return s.slice(0, 420) + (s.length > 420 ? "\n...(cortado)" : "");
-  }
-}
-
 function isAuthOnly(resp) {
   return resp && (resp.status === 401 || resp.status === 403);
 }
@@ -68,6 +57,18 @@ function readMeIdOptional() {
 function redirectToLogin() {
   sessionStorage.removeItem("linktour_user_id");
   location.replace("/index.html");
+}
+
+async function readApiError(resp) {
+  const txt = await resp.text().catch(() => "");
+  if (!txt) return `HTTP ${resp.status}`;
+  try {
+    const obj = JSON.parse(txt);
+    const msg = obj.mensagem || obj.message || obj.error || obj.details || obj.title;
+    return (msg ? String(msg) : `HTTP ${resp.status}`).slice(0, 520);
+  } catch {
+    return String(txt).slice(0, 520);
+  }
 }
 
 function fmtDateTime(dt) {
@@ -110,37 +111,8 @@ function svgAvatarDataUri(initial) {
   return "data:image/svg+xml;base64," + b64;
 }
 
-function applyHeaderAndMenuAvatar() {
-  const hdrBtn = document.getElementById("hdrAvatarBtn");
-  const hdrImg = document.getElementById("hdrAvatarImg");
-  const umImg = document.getElementById("umAvatarImg");
-  const umName = document.getElementById("umName");
-  const umCity = document.getElementById("umCity");
-  const btnEntrar = document.getElementById("btnEntrar");
-
-  if (!meId) {
-    if (hdrBtn) hdrBtn.style.display = "none";
-    if (btnEntrar) btnEntrar.style.display = "inline-flex";
-    return;
-  }
-
-  if (btnEntrar) btnEntrar.style.display = "none";
-  if (hdrBtn) hdrBtn.style.display = "inline-flex";
-
-  const nome = safeName(me, meId);
-  const cidade = (me?.cidade || "—").trim() || "—";
-  const initial = nome.charAt(0).toUpperCase();
-
-  const foto = (me?.fotoBase64 || "").trim();
-  const src = foto ? ("data:image/png;base64," + foto) : svgAvatarDataUri(initial);
-
-  if (hdrImg) hdrImg.src = src;
-  if (umImg) umImg.src = src;
-  if (umName) umName.textContent = nome;
-  if (umCity) umCity.textContent = cidade;
-}
-
-function goHome() { location.href = "/pages/home.html"; }
+// nav
+function goHome() { location.href = "/html/home.html"; }
 function goEntrar() { location.href = "/index.html"; }
 function goBack() { history.length > 1 ? history.back() : goHome(); }
 
@@ -165,6 +137,37 @@ function logout() {
   redirectToLogin();
 }
 
+// header menu (logado)
+function applyHeaderAndMenuAvatar() {
+  const hdrBtn = document.getElementById("hdrAvatarBtn");
+  const hdrImg = document.getElementById("hdrAvatarImg");
+  const umImg = document.getElementById("umAvatarImg");
+  const umName = document.getElementById("umName");
+  const umCity = document.getElementById("umCity");
+  const btnEntrar = document.getElementById("btnEntrar");
+
+  if (!meId) {
+    if (hdrBtn) hdrBtn.style.display = "none";
+    if (btnEntrar) btnEntrar.style.display = "inline-flex";
+    return;
+  }
+
+  if (btnEntrar) btnEntrar.style.display = "none";
+  if (hdrBtn) hdrBtn.style.display = "inline-flex";
+
+  const nome = safeName(me, meId);
+  const cidade = (me?.cidade || "—").trim() || "—";
+  const initial = nome.charAt(0).toUpperCase();
+  const foto = (me?.fotoBase64 || "").trim();
+  const src = foto ? ("data:image/png;base64," + foto) : svgAvatarDataUri(initial);
+
+  if (hdrImg) hdrImg.src = src;
+  if (umImg) umImg.src = src;
+  if (umName) umName.textContent = nome;
+  if (umCity) umCity.textContent = cidade;
+}
+
+// tabs
 function setTab(next) {
   tab = next;
 
@@ -181,16 +184,32 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// render
 function renderHeaderUser() {
   const nome = safeName(target, targetId);
   const cidade = (target?.cidade || "—").trim() || "—";
 
-  document.getElementById("nomeCompleto").textContent = nome;
-  document.getElementById("pillCidade").textContent = cidade;
+  const nomeEl = document.getElementById("nomeCompleto");
+  const pillEl = document.getElementById("pillCidade");
+  if (nomeEl) nomeEl.textContent = nome;
+  if (pillEl) pillEl.textContent = cidade;
 
+  const foto = (target?.fotoBase64 || "").trim();
   const initial = nome.trim().charAt(0).toUpperCase() || "?";
+
   const av = document.getElementById("avatar");
-  if (av) av.textContent = initial;
+  if (av) {
+    if (foto) {
+      av.textContent = "";
+      av.style.backgroundImage = `url("${"data:image/png;base64," + foto}")`;
+      av.style.backgroundSize = "cover";
+      av.style.backgroundPosition = "center";
+      av.style.backgroundRepeat = "no-repeat";
+    } else {
+      av.style.backgroundImage = "";
+      av.textContent = initial;
+    }
+  }
 
   const lu = document.getElementById("lastUpdate");
   if (lu) lu.textContent = "Atualizado: " + fmtDateTime(new Date().toISOString().slice(0, 19));
@@ -222,14 +241,15 @@ function renderEventos() {
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
 
-    card.addEventListener("click", () => {
-      location.href = `./evento.html?id=${encodeURIComponent(ev?.id)}`;
-    });
+    const open = () => {
+      const id = ev?.id;
+      if (!id) return;
+      location.href = `./evento.html?id=${encodeURIComponent(id)}`;
+    };
+
+    card.addEventListener("click", open);
     card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        location.href = `./evento.html?id=${encodeURIComponent(ev?.id)}`;
-      }
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
     });
 
     const title = document.createElement("div");
@@ -305,9 +325,7 @@ function wireActions() {
 
   const isMe = meId && targetId && String(meId) === String(targetId);
 
-  if (btnAbrirPerfil) {
-    btnAbrirPerfil.style.display = isMe ? "inline-flex" : "none";
-  }
+  if (btnAbrirPerfil) btnAbrirPerfil.style.display = isMe ? "inline-flex" : "none";
 
   if (btnSeguir) {
     if (!meId) {
@@ -322,7 +340,7 @@ function wireActions() {
       btnSeguir.onclick = () => {
         hideError("pageError");
         hideNotice();
-        showNotice("Seguir: em breve (vamos acoplar a rota quando você criar).");
+        showNotice("Seguir: em breve.");
       };
     }
   }
@@ -340,10 +358,7 @@ function wireActions() {
       btnMensagem.onclick = () => {
         hideError("pageError");
         hideNotice();
-        if (email) {
-          window.open(`mailto:${encodeURIComponent(email)}`, "_self");
-          return;
-        }
+        if (email) return window.open(`mailto:${encodeURIComponent(email)}`, "_self");
         window.open(`tel:${encodeURIComponent(tel)}`, "_self");
       };
     }
@@ -356,7 +371,7 @@ function openFullProfile() {
   showNotice("Perfil completo: por enquanto você já está vendo a página do usuário.");
 }
 
-// ===== Fetchers =====
+// fetch
 async function fetchMeIfLogged() {
   if (!meId) return;
   const resp = await API.usuario(meId);
@@ -376,7 +391,7 @@ async function fetchTarget() {
   }
 
   if (!resp.ok) {
-    const msg = await compactError(resp);
+    const msg = await readApiError(resp);
     showError("pageError", "Falha ao carregar usuário.\n" + msg);
     return false;
   }
@@ -395,7 +410,7 @@ async function fetchEventos() {
   if (isAuthOnly(resp)) return redirectToLogin();
 
   if (!resp.ok) {
-    const msg = await compactError(resp);
+    const msg = await readApiError(resp);
     showError("pageError", "Falha ao carregar eventos.\n" + msg);
     eventos = [];
     renderEventos();
@@ -415,7 +430,7 @@ async function fetchAlocacoes() {
   if (isAuthOnly(resp)) return redirectToLogin();
 
   if (!resp.ok) {
-    const msg = await compactError(resp);
+    const msg = await readApiError(resp);
     showError("pageError", "Falha ao carregar alocações.\n" + msg);
     alocacoes = [];
     renderAlocacoes();
@@ -429,7 +444,7 @@ async function fetchAlocacoes() {
   return true;
 }
 
-// ===== Start =====
+// start
 (function init() {
   hideError("pageError");
   hideNotice();

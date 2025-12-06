@@ -1,3 +1,4 @@
+/* base */
 * { box-sizing: border-box; }
 :root{
   --black:#000; --white:#fff;
@@ -17,6 +18,7 @@ body{
   flex-direction:column;
 }
 
+/* header */
 header{
   background: var(--black);
   color: var(--white);
@@ -67,6 +69,7 @@ header .hdr-actions{
   display:block;
 }
 
+/* layout */
 main{
   width: 100%;
   max-width: 980px;
@@ -77,6 +80,7 @@ main{
   gap: 14px;
 }
 
+/* hero */
 .hero{
   border: 1px solid var(--black);
   border-radius: var(--r);
@@ -94,9 +98,7 @@ main{
   position:absolute; inset:0;
   background: linear-gradient(0deg, rgba(0,0,0,0.62), rgba(0,0,0,0.10));
 }
-.hero-body{
-  padding: 12px 14px 14px 14px;
-}
+.hero-body{ padding: 12px 14px 14px 14px; }
 
 .profile-row{
   display:flex;
@@ -128,7 +130,12 @@ main{
   text-overflow:ellipsis;
   white-space:nowrap;
 }
-.subline{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 10px; }
+.subline{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom: 10px;
+}
 
 .pill{
   border: 1px solid var(--black);
@@ -139,6 +146,7 @@ main{
   background: var(--white);
 }
 
+/* actions */
 .hero-actions{
   display:flex;
   gap:10px;
@@ -185,6 +193,7 @@ main{
   box-shadow: none;
 }
 
+/* panel + tabs */
 .panel{
   border: 1px solid var(--black);
   border-radius: var(--r);
@@ -270,6 +279,7 @@ main{
   background: var(--white);
 }
 
+/* messages */
 .error{
   display:none;
   padding: 10px;
@@ -366,6 +376,7 @@ main{
 }
 .um-item.exit:hover{ background: #222; }
 
+/* footer */
 footer{
   margin-top:auto;
   padding: 14px 16px;
@@ -374,6 +385,7 @@ footer{
   color:#222;
 }
 
+/* responsive */
 @media (max-width: 760px){
   .btn{ width:100%; min-width: 0; }
   .stat{ min-width: 140px; }
