@@ -47,6 +47,12 @@ public class PublicacaoController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/eventos/{id}/disponibilidade")
+    public ResponseEntity<Integer> getDisponibilidade(@PathVariable Long id) {
+        int vagas = eventoService.calcularDisponibilidade(id);
+        return ResponseEntity.ok(vagas);
+    }
+
     private Object mapPublicacaoToDTO(Publicacao publicacao) {
 
         if (publicacao instanceof Evento evento) {

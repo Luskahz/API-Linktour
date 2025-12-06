@@ -7,6 +7,7 @@ import com.linktour.mapper.publicacao.EventoMapper;
 import com.linktour.model.publicacao.Evento;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.model.usuario.Usuario;
+import com.linktour.repository.participacao.ParticipacaoRepository;
 import com.linktour.repository.publicacao.EventoRepository;
 import com.linktour.repository.alocacao.AlocacaoRepository;
 import com.linktour.repository.usuario.UsuarioRepository;
@@ -19,15 +20,18 @@ public class EventoService {
     private final EventoRepository eventoRepository;
     private final AlocacaoRepository alocacaoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ParticipacaoRepository participacaoRepository;
 
     public EventoService(
             EventoRepository eventoRepository,
             AlocacaoRepository alocacaoRepository,
-            UsuarioRepository usuarioRepository
+            UsuarioRepository usuarioRepository,
+            ParticipacaoRepository participacaoRepository
     ) {
         this.eventoRepository = eventoRepository;
         this.alocacaoRepository = alocacaoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.participacaoRepository = participacaoRepository;
     }
 
     public Evento criar(EventoCreateDTO dto) {
@@ -64,6 +68,17 @@ public class EventoService {
                 .orElseThrow(() ->
                         new RecursoNaoEncontradoException("Evento não encontrado.")
                 );
+    }
+
+    public int calcularDisponibilidade(Long eventoId) {
+        Evento evento = eventoRepository.findById(eventoId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Evento não encontrado"));
+
+        int capacidade = evento.getCapacidade();
+        long inscritos = participacaoRepository.countByEvento_Id(eventoId);
+
+        int vagas = capacidade - (int) inscritos;
+        return Math.max(vagas, 0);
     }
 
     public void deletar(Long id) {

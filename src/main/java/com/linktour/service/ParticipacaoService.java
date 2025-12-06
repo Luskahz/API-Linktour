@@ -60,7 +60,7 @@ public class ParticipacaoService {
                 .ifPresent(p -> { throw new ParticipacaoJaExisteException(dto.usuarioId(), eventoId); });
 
         if (evento.getCapacidade() != null) {
-            long inscritos = participacaoRepository.countByEventoId(eventoId);
+            long inscritos = participacaoRepository.countByEvento_Id(eventoId);
             if (inscritos >= evento.getCapacidade()) {
                 throw new EventoSemVagasException(eventoId);
             }
@@ -121,6 +121,8 @@ public class ParticipacaoService {
 
         return ParticipacaoEventoMapper.toResponse(p);
     }
+
+
 
     public List<ParticipacaoEvento> listar() {
         return participacaoRepository.findAll();

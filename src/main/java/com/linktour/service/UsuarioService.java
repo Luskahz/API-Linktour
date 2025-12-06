@@ -3,17 +3,14 @@ package com.linktour.service;
 import com.linktour.dto.usuario.comum.ComumAtualizarDTO;
 import com.linktour.dto.usuario.comum.ComumCreateDTO;
 import com.linktour.dto.usuario.LoginDTO;
-import com.linktour.exception.CPFDuplicadoException;
-import com.linktour.exception.CPFInvalidoException;
-import com.linktour.exception.EmailJaCadastradoException;
-import com.linktour.exception.RecursoNaoEncontradoException;
-import com.linktour.exception.SenhaIncorretaException;
+import com.linktour.exception.*;
 import com.linktour.mapper.usuario.ComumMapper;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.model.publicacao.Evento;
 import com.linktour.model.usuario.Comum;
 import com.linktour.model.usuario.Usuario;
 import com.linktour.repository.alocacao.AlocacaoRepository;
+import com.linktour.repository.participacao.ParticipacaoRepository;
 import com.linktour.repository.usuario.ComumRepository;
 import com.linktour.repository.usuario.UsuarioRepository;
 import com.linktour.repository.publicacao.EventoRepository;
@@ -30,17 +27,22 @@ public class UsuarioService {
     private final ComumRepository comumRepository;
     private final EventoRepository eventoRepository;
     private final AlocacaoRepository alocacaoRepository;
+    private final ParticipacaoRepository participacaoRepository;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
             ComumRepository comumRepository,
             EventoRepository eventoRepository,
-            AlocacaoRepository alocacaoRepository
+            AlocacaoRepository alocacaoRepository,
+            ParticipacaoRepository participacaoRepository
+
     ) {
         this.usuarioRepository = usuarioRepository;
         this.comumRepository = comumRepository;
         this.eventoRepository = eventoRepository;
         this.alocacaoRepository = alocacaoRepository;
+        this.participacaoRepository = participacaoRepository;
+
     }
 
     public Comum cadastrarComum(ComumCreateDTO dto) {
@@ -158,11 +160,28 @@ public class UsuarioService {
     }
 
     public void deletar(Long id) {
-        if (!usuarioRepository.existsById(id)) {
-            throw new RecursoNaoEncontradoException("Usuário não encontrado");
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado."));
+
+        List<Evento> eventosCriados = eventoRepository.findByUsuarioId(id);
+        if (!eventosCriados.isEmpty()) {
+            throw new UsuarioPossuiEventosException(id);
         }
+
+        boolean participaDeEventos = participacaoRepository.existsByUsuario_Id(id);
+        if (participaDeEventos) {
+            throw new UsuarioPossuiParticipacoesException(id);
+        }
+
+        List<Alocacao> alocacoes = alocacaoRepository.findByUsuarioId(id);
+        if (!alocacoes.isEmpty()) {
+            alocacaoRepository.deleteAll(alocacoes);
+        }
+
         usuarioRepository.deleteById(id);
     }
+
 
     private boolean validaCPF(String cpf) {
         String c = cpf.replaceAll("\\D", "");

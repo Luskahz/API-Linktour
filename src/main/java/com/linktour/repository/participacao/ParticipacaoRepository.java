@@ -9,6 +9,7 @@
 
         Optional<ParticipacaoEvento> findByUsuarioIdAndEventoId(Long usuarioId, Long eventoId);
 
-        boolean existsByUsuarioIdAndEventoId(Long usuarioId, Long eventoId);
-        long countByEventoId(Long eventoId);
+        boolean existsByUsuario_IdAndEvento_Id(Long usuarioId, Long eventoId);
+        long countByEvento_Id(Long eventoId);
+        boolean existsByUsuario_Id(Long id);
     }
