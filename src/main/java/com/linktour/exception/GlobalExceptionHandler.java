@@ -84,4 +84,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex) {
         return resposta(ex.getMessage(), 400);
     }
+
+    @ExceptionHandler(UsuarioPossuiEventosException.class)
+    public ResponseEntity<Object> handleUsuarioPossuiEventos(UsuarioPossuiEventosException ex) {
+        return resposta(ex.getMessage(), 409);
+    }
+
+    @ExceptionHandler(UsuarioPossuiParticipacoesException.class)
+    public ResponseEntity<Object> handleUsuarioPossuiParticipacoes(UsuarioPossuiParticipacoesException ex) {
+        return resposta(ex.getMessage(), 409);
+    }
 }
