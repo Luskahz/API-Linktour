@@ -2,11 +2,13 @@ package com.linktour.service;
 
 import com.linktour.dto.alocacao.AlocacaoAtualizarDTO;
 import com.linktour.dto.alocacao.AlocacaoCreateDTO;
+import com.linktour.exception.AlocacaoPossuiEventosPendentesException;
 import com.linktour.exception.RecursoNaoEncontradoException;
 import com.linktour.mapper.AlocacaoMapper;
 import com.linktour.model.alocacao.Alocacao;
 import com.linktour.model.usuario.Usuario;
 import com.linktour.repository.alocacao.AlocacaoRepository;
+import com.linktour.repository.publicacao.EventoRepository;
 import com.linktour.repository.usuario.UsuarioRepository;
 import org.springframework.stereotype.Service;
 
@@ -18,15 +20,18 @@ public class AlocacaoService {
     private final AlocacaoRepository alocacaoRepository;
     private final UsuarioRepository usuarioRepository;
     private final GeolocalizacaoService geolocalizacaoService;
+    private final EventoRepository eventoRepository;
 
     public AlocacaoService(
             AlocacaoRepository alocacaoRepository,
             GeolocalizacaoService geo,
-            UsuarioRepository usuarioRepository
+            UsuarioRepository usuarioRepository,
+            EventoRepository eventoRepository
     ) {
         this.alocacaoRepository = alocacaoRepository;
         this.usuarioRepository = usuarioRepository;
         this.geolocalizacaoService = geo;
+        this.eventoRepository = eventoRepository;
     }
 
     public Alocacao criar(AlocacaoCreateDTO dto) {
@@ -52,11 +57,17 @@ public class AlocacaoService {
     }
 
     public void deletar(Long id) {
-        if (!alocacaoRepository.existsById(id)) {
-            throw new RecursoNaoEncontradoException("Alocação não encontrada");
+        Alocacao alocacao = alocacaoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Alocação não encontrada"));
+
+        boolean possuiEventos = eventoRepository.existsByAlocacao_Id(id);
+        if (possuiEventos) {
+            throw new AlocacaoPossuiEventosPendentesException(id);
         }
+
         alocacaoRepository.deleteById(id);
     }
+
 
     public Alocacao atualizar(Long id, AlocacaoAtualizarDTO dto) {
         Alocacao existente = buscar(id);
